@@ -59,6 +59,10 @@
   .nw { white-space: nowrap; }
   .contacts, .meta, .credits { color: var(--muted); font-size: 16px; }
   .contacts { margin-top: 16px; }
+  /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
+  .list { margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
+  .list span { white-space: nowrap; }
+  .list span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
   article, .about { margin-top: 72px; }
   .meta { margin-bottom: 16px; }
   .credits { margin-top: 16px; }
@@ -75,12 +79,8 @@
   <header>
     <h1>Денис Безруков</h1>
     <p>Дизайнер брендов, сайтов и интерфейсов. Рисую и сам собираю в коде с ИИ-агентами. 14 лет в дизайне, с 2017 года в Evrone.</p>
-    <p class="contacts">
-      <a href="mailto:denis.design@icloud.com">denis.design@icloud.com</a> ·
-      <a href="https://t.me/dbezrukov">Телеграм</a> ·
-      <a href="https://www.behance.net/bezrukov">Behance</a> ·
-      <a href="https://dribbble.com/dbezrukov">Dribbble</a> ·
-      <a href="https://github.com/den-is-bezrukov">GitHub</a>
+    <p class="contacts list">
+      <span><a href="mailto:denis.design@icloud.com">denis.design@icloud.com</a></span><wbr><span><a href="https://t.me/dbezrukov">Телеграм</a></span><wbr><span><a href="https://www.behance.net/bezrukov">Behance</a></span><wbr><span><a href="https://dribbble.com/dbezrukov">Dribbble</a></span><wbr><span><a href="https://github.com/den-is-bezrukov">GitHub</a></span>
     </p>
   </header>
 
@@ -88,15 +88,8 @@
     <p>С 2023 года отвечаю за дизайн в маркетинге Evrone: сайт, соцсети, мерч, конференции. Параллельно год вёл продуктовый дизайн платёжного сервиса TXN Pro. До этого шесть лет рисовал интерфейсы для клиентов Evrone, например систему аналитики для завода Pirelli.</p>
     <p>Сейчас развиваю бренд UMO для Яндекс Электро. С 2026 года сам собираю то, что рисую: сайт, где дилерская сеть делает печатные материалы без дизайнера, конструктор постов для Evrone, шрифт со знаком Алисы.</p>
     <p>Работы получали «Сайт дня» на Awwwards и CSS Design Awards, Best of Behance и «Золотой сайт». На Behance 6 тысяч подписчиков.</p>
-    <p class="contacts">
-      <a href="#umo">Яндекс Электро и UMO</a> ·
-      <a href="#txn">TXN Pro</a> ·
-      <a href="#evrone">Сайт и стиль Evrone</a> ·
-      <a href="#composter">Composter</a> ·
-      <a href="#spqs">SPQS</a> ·
-      <a href="#cinescope">Cinescope</a> ·
-      <a href="#hroots">HRoots</a> ·
-      <a href="#pirelli">Pirelli</a>
+    <p class="contacts list">
+      <span><a href="#umo">Яндекс Электро и UMO</a></span><wbr><span><a href="#txn">TXN Pro</a></span><wbr><span><a href="#evrone">Сайт и стиль Evrone</a></span><wbr><span><a href="#composter">Composter</a></span><wbr><span><a href="#spqs">SPQS</a></span><wbr><span><a href="#cinescope">Cinescope</a></span><wbr><span><a href="#hroots">HRoots</a></span><wbr><span><a href="#pirelli">Pirelli</a></span>
     </p>
   </section>
 
