@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проекты Дениса Безрукова</title>
+<meta name="description" content="Главные проекты дизайнера Дениса Безрукова: что в них делал он, а что команда.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191919;
+      --text: #ececec;
+      --muted: #9b9b9b;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 Inter, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 72px 24px 96px;
+  }
+  h1 {
+    margin: 0 0 16px;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  p { margin: 0 0 12px; }
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  a:hover { text-decoration-color: currentColor; }
+  .nw { white-space: nowrap; }
+  .contacts, .meta, .credits { color: var(--muted); font-size: 15px; }
+  .contacts { margin-top: 16px; }
+  .toc {
+    margin: 48px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .toc li { margin: 4px 0; }
+  article { margin-top: 72px; }
+  .meta { margin-bottom: 16px; }
+  .credits { margin-top: 16px; }
+  @media (max-width: 480px) {
+    main { padding: 40px 16px 64px; }
+    h1 { font-size: 28px; }
+    article { margin-top: 56px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Денис Безруков</h1>
+    <p>Дизайнер брендов, сайтов и интерфейсов. Рисую и сам собираю в коде с ИИ-агентами. 14 лет в дизайне, с 2017 года в Evrone.</p>
+    <p>Здесь главные проекты: что в них делал я, а что — команда.</p>
+    <p class="contacts">
+      <a href="mailto:denis.design@icloud.com">denis.design@icloud.com</a> ·
+      <a href="https://t.me/dbezrukov">Телеграм</a> ·
+      <a href="https://www.behance.net/bezrukov">Behance</a> ·
+      <a href="https://dribbble.com/dbezrukov">Dribbble</a> ·
+      <a href="https://github.com/den-is-bezrukov">GitHub</a>
+    </p>
+  </header>
+
+  <ul class="toc">
+    <li><a href="#umo">UMO и umo.autos</a></li>
+    <li><a href="#txn">TXN Pro</a></li>
+    <li><a href="#evrone">Сайт и стиль Evrone</a></li>
+    <li><a href="#composter">Composter</a></li>
+    <li><a href="#spqs">SPQS</a></li>
+    <li><a href="#cinescope">Cinescope</a></li>
+    <li><a href="#hroots">HRoots</a></li>
+    <li><a href="#pirelli">Pirelli</a></li>
+  </ul>
+
+  <article id="umo">
+    <h2>UMO и umo.autos</h2>
+    <p class="meta">Яндекс Электро · бренд, дилерские центры, сайт · 2026</p>
+    <p>Яндекс Электро вместе с партнёрами продаёт машины с Алисой и технологиями Яндекса. Для бренда UMO я сделал всё, что покупатель видит у дилера: фасад, оклейку демо-машин, полиграфию и таблички.</p>
+    <p>Главное — сайт <a href="https://umo.autos">umo.autos</a>: гайд бренда и восемь генераторов печатных материалов. Дилер вписывает свои данные и сразу скачивает PDF для типографии. Генератор оклейки не даст поставить название дилера на ручку двери.</p>
+    <p>Нарисовал и сам собрал сайт с Claude Code за два с половиной месяца, без программистов и сервера. Поправил шаблон — и все 55 дилеров сразу работают с актуальным.</p>
+    <p class="credits">Дизайн и сборка — Денис Безруков</p>
+  </article>
+
+  <article id="txn">
+    <h2>TXN Pro</h2>
+    <p class="meta">Evrone · продуктовый дизайн · июнь 2025 — июнь 2026</p>
+    <p><a href="https://txn.pro">TXN Pro</a> — B2B-сервис для расчётов в криптовалюте между компаниями: принять платёж, сделать выплату, держать баланс в обычной валюте. Год я вёл его дизайн один, напрямую с клиентом, на половину рабочего времени.</p>
+    <p>Переделал интерфейс всей системы: кабинет клиента и админку для операторов. Обновил айдентику, нарисовал промосайт и лендинги. Собрал UI-кит в Figma: фронтенд собирает новые экраны из готовых компонентов, и разработка пошла быстрее.</p>
+    <p>После запуска сам прошёлся по багам и следил, чтобы всё собрали как в макетах. Клиент продлил работу.</p>
+    <p class="credits">Продуктовый дизайн — Денис Безруков. Разработка — Evrone</p>
+  </article>
+
+  <article id="evrone">
+    <h2>Сайт и стиль Evrone</h2>
+    <p class="meta">Evrone · сайт, фирменный стиль, мерч · с 2023 года</p>
+    <p>Evrone делает сервисы для российских и зарубежных клиентов. С 2023 года я отвечаю за дизайн в её маркетинге.</p>
+    <p>Переделал <a href="https://www.behance.net/gallery/236263937/Evrone-Website">сайт evrone.com</a> вместе с логотипом, цветами и шрифтами. Все шаблоны, от главной до страницы 404, собраны из блоков: маркетинг сам делает страницы услуг, технологий и отраслей без дизайнера. Силы дизайна уходят на обложки кейсов и статей.</p>
+    <p>Сделал <a href="https://www.behance.net/gallery/244030177/Evrone-Merch">мерч</a> для сотрудников: термос, кружку и куртку — вещи на каждый день, без крикливого логотипа. Сам снялся в нём для каталога: снимали на телефон и дорабатывали нейросетями.</p>
+    <p class="credits">Сайт — Денис Безруков. Мерч: продюсер — Наталья Янкелевич, дизайн и модель — Денис Безруков, ИИ-фотограф — Сергей Шмаков</p>
+  </article>
+
+  <article id="composter">
+    <h2>Composter</h2>
+    <p class="meta">Evrone · интерфейс и сборка · сентябрь 2026</p>
+    <p><a href="https://den-is-bezrukov.github.io/composter/">Composter</a> — конструктор постов для Instagram Evrone. Вставляешь заголовок и картинку и скачиваешь пост 1080×1440 без Figma и дизайнера.</p>
+    <p>Шрифт и размер заголовка подбирать не нужно. Конструктор предупредит, если заголовок не влезает или картинка выйдет мыльной. В помощи лежит промпт стиля: по нему ChatGPT рисует иллюстрации в духе Evrone.</p>
+    <p>Нарисовал и собрал с Claude Code за пять дней. Конструктор — один HTML-файл: ничего не надо устанавливать, картинки никуда не загружаются.</p>
+    <p class="credits">Дизайн и сборка — Денис Безруков</p>
+  </article>
+
+  <article id="spqs">
+    <h2>SPQS</h2>
+    <p class="meta">Evrone · название, фирменный стиль, интерфейс</p>
+    <p><a href="https://www.behance.net/gallery/200764473/SPQS-Text-Tool-Identity-Product-Design">SPQS</a> — ИИ-помощник для текстов: пишет описания товаров для маркетплейсов, маршруты путешествий, стандарты для частных клиник и раскладывает всё по папкам. В основе — редактор со встроенным чат-ботом.</p>
+    <p>С Полиной Турчаниновой мы придумали название и фирменный стиль. Имя и шрифт отсылают к Римской империи, логотип собран из типографских знаков, главный цвет — оранжевый. Интерфейс рисовали вчетвером.</p>
+    <p class="credits">Айдентика — Денис Безруков, Полина Турчанинова. Интерфейс — Наталья Янкелевич, Полина Турчанинова, Ирина Белова, Денис Безруков</p>
+  </article>
+
+  <article id="cinescope">
+    <h2>Cinescope</h2>
+    <p class="meta">Evrone · интерфейс</p>
+    <p><a href="https://www.behance.net/gallery/181803423/Cinescope-CMS-UIUX">Cinescope</a> — система для контент-отделов онлайн-кинотеатров: через неё покупают и продают лицензии на фильмы и сериалы. Лицензии должны идти без перерывов. Если фильм на пару недель выпадает, система подсвечивает этот промежуток, чтобы редактор успел его закрыть.</p>
+    <p>Карточку фильма она заполняет сама по номеру в IMDb. Карту функций мы собирали вместе с контент-отделами стримингов и несколько раз переделывали.</p>
+    <p class="credits">Интерфейс — Наталья Янкелевич, Елизавета Ульянова, Денис Безруков. Менеджер — Екатерина Беркун</p>
+  </article>
+
+  <article id="hroots">
+    <h2>HRoots</h2>
+    <p class="meta">Evrone · интерфейс</p>
+    <p><a href="https://www.behance.net/gallery/178653875/HROOTS-ERP-System-UIUX-andWebDesign">HRoots</a> — HR-портал для компаний от 300 человек: найти коллегу, понять, кто за что отвечает, быстрее ввести новичка в курс дела. Раньше нужного человека искали письмами в отдел кадров.</p>
+    <p>Главное в интерфейсе — карта компании. Перед дизайном мы провели интервью с HR-отделами и узнали, что отделы бывают вложены друг в друга на пять-шесть уровней. Первая версия заработала через три месяца.</p>
+    <p class="credits">Интерфейс — Наталья Янкелевич, Елизавета Ульянова, Денис Безруков, Полина Турчанинова. Презентация — Денис Безруков, Полина Турчанинова</p>
+  </article>
+
+  <article id="pirelli">
+    <h2>Pirelli</h2>
+    <p class="meta">Evrone · интерфейс · 2020</p>
+    <p>У Pirelli 24 завода в 13 странах. На заводе, для которого мы делали <a href="https://www.behance.net/gallery/204429703/Pirelli-Analysis-System">систему аналитики</a>, сотни станков и миллионы операций в день. Готовые системы не подошли, и завод заказал свою: отчёты об эффективности оборудования, контроль этапов производства, учёт простоев.</p>
+    <p>Раздел простоев выводят на большие экраны прямо в цехе. Операторы видят, какие станки стоят и почему, и меняют работу на ходу.</p>
+    <p class="credits">Интерфейс — Наталья Янкелевич, Дмитрий Гренев, Денис Безруков. Менеджеры — Екатерина Беркун, Антон Комаров. Презентация — Денис Безруков</p>
+  </article>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/typograf@7.8.0/dist/typograf.min.js"></script>
+<script>
+  // Short words never end a line and a paragraph's last line never holds one word alone: the layout is fluid,
+  // so the non-breaking spaces are placed in the browser by Typograf's spacing rules.
+  (function () {
+    if (!window.Typograf) return
+    var NBSP = ' '
+    var tp = new Typograf({
+      locale: ['ru', 'en-US'],
+      disableRule: '*',
+      enableRule: ['common/nbsp/*', 'ru/nbsp/*', 'ru/dash/main'],
+    })
+    tp.disableRule(['common/nbsp/replaceNbsp', 'common/nbsp/nowrap'])
+    tp.setSetting('common/nbsp/afterShortWord', 'lengthShortWord', 3)
+    var INLINE = { A: 1, SPAN: 1, STRONG: 1, EM: 1, B: 1, I: 1 }
+    function endsLine(node) {
+      for (var n = node; ; n = n.parentNode) {
+        for (var s = n.nextSibling; s; s = s.nextSibling) if (s.textContent.trim()) return false
+        if (!n.parentNode || !INLINE[n.parentNode.nodeName]) return true
+      }
+    }
+    // A hyphenated word (ИИ-агентами, B2B-сервис, UI-кит) breaks at its hyphen otherwise, leaving «ИИ-» alone.
+    function keepHyphenated(node) {
+      var re = /[0-9A-Za-zА-Яа-яЁё]+(?:-[0-9A-Za-zА-Яа-яЁё]+)+/g
+      var text = node.nodeValue, last = 0, frag = document.createDocumentFragment(), m
+      while ((m = re.exec(text))) {
+        frag.appendChild(document.createTextNode(text.slice(last, m.index)))
+        var word = document.createElement('span')
+        word.className = 'nw'
+        word.textContent = m[0]
+        frag.appendChild(word)
+        last = m.index + m[0].length
+      }
+      if (!last) return
+      frag.appendChild(document.createTextNode(text.slice(last)))
+      node.parentNode.replaceChild(frag, node)
+    }
+    var nodes = []
+    var walker = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT)
+    for (var n = walker.nextNode(); n; n = walker.nextNode()) if (n.nodeValue.trim()) nodes.push(n)
+    nodes.forEach(function (node) {
+      var text = node.nodeValue
+      var result = tp.execute(text)
+      if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
+      if (result !== text) node.nodeValue = result
+      keepHyphenated(node)
+    })
+  })()
+</script>
+</body>
+</html>
