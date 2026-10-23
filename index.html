@@ -34,9 +34,9 @@
     padding: 72px 24px 96px;
   }
   h1 {
-    margin: 0 0 16px;
-    font-size: 32px;
-    line-height: 1.2;
+    margin: 0 0 20px;
+    font-size: 44px;
+    line-height: 1.1;
     font-weight: 600;
     letter-spacing: -0.02em;
   }
@@ -59,7 +59,7 @@
   .contacts, .meta, .credits { color: var(--muted); font-size: 15px; }
   .contacts { margin-top: 16px; }
   .toc {
-    margin: 48px 0 0;
+    margin: 96px 0 0;
     padding: 0;
     list-style: none;
   }
@@ -69,7 +69,7 @@
   .credits { margin-top: 16px; }
   @media (max-width: 480px) {
     main { padding: 40px 16px 64px; }
-    h1 { font-size: 28px; }
+    h1 { font-size: 34px; }
     article { margin-top: 56px; }
   }
 </style>
@@ -88,17 +88,6 @@
       <a href="https://github.com/den-is-bezrukov">GitHub</a>
     </p>
   </header>
-
-  <ul class="toc">
-    <li><a href="#umo">UMO и umo.autos</a></li>
-    <li><a href="#txn">TXN Pro</a></li>
-    <li><a href="#evrone">Сайт и стиль Evrone</a></li>
-    <li><a href="#composter">Composter</a></li>
-    <li><a href="#spqs">SPQS</a></li>
-    <li><a href="#cinescope">Cinescope</a></li>
-    <li><a href="#hroots">HRoots</a></li>
-    <li><a href="#pirelli">Pirelli</a></li>
-  </ul>
 
   <article id="umo">
     <h2>UMO и umo.autos</h2>
@@ -167,9 +156,20 @@
     <p>Раздел простоев выводят на большие экраны прямо в цехе. Операторы видят, какие станки стоят и почему, и меняют работу на ходу.</p>
     <p class="credits">Интерфейс — Наталья Янкелевич, Дмитрий Гренев, Денис Безруков. Менеджеры — Екатерина Беркун, Антон Комаров. Презентация — Денис Безруков</p>
   </article>
+
+  <ul class="toc">
+    <li><a href="#umo">UMO и umo.autos</a></li>
+    <li><a href="#txn">TXN Pro</a></li>
+    <li><a href="#evrone">Сайт и стиль Evrone</a></li>
+    <li><a href="#composter">Composter</a></li>
+    <li><a href="#spqs">SPQS</a></li>
+    <li><a href="#cinescope">Cinescope</a></li>
+    <li><a href="#hroots">HRoots</a></li>
+    <li><a href="#pirelli">Pirelli</a></li>
+  </ul>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/typograf@7.8.0/dist/typograf.min.js"></script>
+<script src="typograf.min.js"></script>
 <script>
   // Short words never end a line and a paragraph's last line never holds one word alone: the layout is fluid,
   // so the non-breaking spaces are placed in the browser by Typograf's spacing rules.
