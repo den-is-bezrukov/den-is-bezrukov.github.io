@@ -13,12 +13,14 @@
     --bg: #ffffff;
     --text: #1a1a1a;
     --muted: #696969;
+    --link: #0066cc;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #191919;
       --text: #ececec;
       --muted: #9b9b9b;
+      --link: #2997ff;
     }
   }
   body {
@@ -49,7 +51,7 @@
   }
   p { margin: 0 0 12px; }
   a {
-    color: inherit;
+    color: var(--link);
     text-decoration: underline;
     text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
     text-decoration-thickness: 2.5%;
