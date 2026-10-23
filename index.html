@@ -8,71 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #ffffff;
-    --text: #1a1a1a;
-    --muted: #6b6b6b;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #191919;
-      --text: #ececec;
-      --muted: #9b9b9b;
-    }
-  }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 17px/1.6 Inter, system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  main {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 72px 24px 96px;
-  }
-  h1 {
-    margin: 0 0 20px;
-    font-size: 44px;
-    line-height: 1.1;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-  h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    line-height: 1.3;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  p { margin: 0 0 12px; }
-  a {
-    color: inherit;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 3px;
-  }
-  a:hover { text-decoration-color: currentColor; }
-  .nw { white-space: nowrap; }
-  .contacts, .meta, .credits { color: var(--muted); font-size: 15px; }
-  .contacts { margin-top: 16px; }
-  .toc {
-    margin: 96px 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .toc li { margin: 4px 0; }
-  article { margin-top: 72px; }
-  .meta { margin-bottom: 16px; }
-  .credits { margin-top: 16px; }
-  @media (max-width: 480px) {
-    main { padding: 40px 16px 64px; }
-    h1 { font-size: 34px; }
-    article { margin-top: 56px; }
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
@@ -169,53 +105,6 @@
 </main>
 
 <script src="typograf.min.js"></script>
-<script>
-  // Short words never end a line and a paragraph's last line never holds one word alone: the layout is fluid,
-  // so the non-breaking spaces are placed in the browser by Typograf's spacing rules.
-  (function () {
-    if (!window.Typograf) return
-    var NBSP = ' '
-    var tp = new Typograf({
-      locale: ['ru', 'en-US'],
-      disableRule: '*',
-      enableRule: ['common/nbsp/*', 'ru/nbsp/*', 'ru/dash/main'],
-    })
-    tp.disableRule(['common/nbsp/replaceNbsp', 'common/nbsp/nowrap'])
-    tp.setSetting('common/nbsp/afterShortWord', 'lengthShortWord', 3)
-    var INLINE = { A: 1, SPAN: 1, STRONG: 1, EM: 1, B: 1, I: 1 }
-    function endsLine(node) {
-      for (var n = node; ; n = n.parentNode) {
-        for (var s = n.nextSibling; s; s = s.nextSibling) if (s.textContent.trim()) return false
-        if (!n.parentNode || !INLINE[n.parentNode.nodeName]) return true
-      }
-    }
-    // A hyphenated word (ИИ-агентами, B2B-сервис, UI-кит) breaks at its hyphen otherwise, leaving «ИИ-» alone.
-    function keepHyphenated(node) {
-      var re = /[0-9A-Za-zА-Яа-яЁё]+(?:-[0-9A-Za-zА-Яа-яЁё]+)+/g
-      var text = node.nodeValue, last = 0, frag = document.createDocumentFragment(), m
-      while ((m = re.exec(text))) {
-        frag.appendChild(document.createTextNode(text.slice(last, m.index)))
-        var word = document.createElement('span')
-        word.className = 'nw'
-        word.textContent = m[0]
-        frag.appendChild(word)
-        last = m.index + m[0].length
-      }
-      if (!last) return
-      frag.appendChild(document.createTextNode(text.slice(last)))
-      node.parentNode.replaceChild(frag, node)
-    }
-    var nodes = []
-    var walker = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT)
-    for (var n = walker.nextNode(); n; n = walker.nextNode()) if (n.nodeValue.trim()) nodes.push(n)
-    nodes.forEach(function (node) {
-      var text = node.nodeValue
-      var result = tp.execute(text)
-      if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
-      if (result !== text) node.nodeValue = result
-      keepHyphenated(node)
-    })
-  })()
-</script>
+<script src="typography.js"></script>
 </body>
 </html>
