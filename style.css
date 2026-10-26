@@ -45,8 +45,8 @@ main {
   margin: 0 auto;
   padding: var(--space-800) var(--space-200);
 }
-/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
-h1, h2, h3 { font-weight: 600; line-height: 1; }
+/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself, and a tracking of -1% a little more. */
+h1, h2, h3 { font-weight: 600; line-height: 1; letter-spacing: -0.01em; }
 h1 { margin: 0 0 var(--space-200); font-size: 3rem; }
 /* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
 h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
