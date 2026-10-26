@@ -134,7 +134,7 @@ def apply(source, edit, spans, articles):
         row = source[start:end]
         m = entry(row, edit.get('after') or '')
         new = '<wbr><span><a href="#%s">Новый проект</a></span>' % id
-        row = row[:m.end()] + new + row[m.end():] if m else re.sub(r'(\s*</p>)$', new + r'\1', row)
+        row = row[:m.end()] + new + row[m.end():] if m else re.sub(r'(</span>\s*</p>)$', new + r'\1', row)
         return source[:start] + row + source[end:]
     if op == 'moveProject':
         k = next(n for n, a in enumerate(articles) if a[0] == edit['id'])

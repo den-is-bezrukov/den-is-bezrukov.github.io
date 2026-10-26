@@ -75,10 +75,12 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .nw { white-space: nowrap; }
 /* Meta: every grey line (under a title, credits, contacts, the project list, breadcrumbs), a step heavier than the text, so the lighter colour holds its own next to it. */
 .meta { color: var(--muted); font-weight: 500; }
-/* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
-.list { line-height: 1.75; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
-.list span { white-space: nowrap; }
-.list span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
+/* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one.
+   The cutting happens in a row inside the paragraph, so the paragraph keeps its own box and its whole highlight in edit mode. */
+.list { line-height: 1.75; }
+.list .row { display: block; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
+.list .row > span { white-space: nowrap; }
+.list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
 .about { margin-top: var(--space-300); }
 /* The project list leads into the projects below, so it stands a group apart from the summary. */
 .about .list { margin-top: var(--space-300); }
