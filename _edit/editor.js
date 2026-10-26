@@ -15,7 +15,7 @@
     '.edit-status.on { opacity: 1; }' +
     '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; gap: 4px 20px; max-width: calc(100vw - 16px); color: var(--muted); }' +
+    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100vw - 16px); color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; }' +
     '.edit-tools span { gap: 12px; }' +
     '.edit-tools span[hidden] { display: none; }' +
