@@ -25,7 +25,7 @@
     '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 500; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 500; }' +
-    '.edit-help { position: fixed; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); margin: 0; white-space: pre-wrap; line-height: 1.8; }' +
+    '.edit-help { position: fixed; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); margin: 0; white-space: pre-wrap; }' +
     '.edit-help[hidden] { display: none; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
