@@ -1,5 +1,5 @@
-"""Serves the site at localhost; with ?edit in the address a page turns editable and writes text edits back into its file,
-along with the balance class a block gets from the «Ровные строки» button.
+"""Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
+a block's text, the balance class it gets from the «Ровные строки» button, a paragraph split in two, joined or removed.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
 it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
@@ -11,16 +11,18 @@ import os
 import re
 import socketserver
 import sys
+import threading
 import webbrowser
 from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITABLE = ('h1', 'h2', 'h3', 'p')
 PORT = 8765
+LOCK = threading.Lock()
 
 
 class Blocks(HTMLParser):
-    """Offsets of every h1, h2, h3 and p inside <main>, in document order: where its start tag begins, where its inner HTML begins and ends."""
+    """Every h1, h2, h3 and p inside <main>, in document order: its tag name, where its start tag begins, where its inner HTML begins and ends."""
 
     def __init__(self, source):
         super().__init__(convert_charrefs=False)
@@ -47,7 +49,7 @@ class Blocks(HTMLParser):
         if tag == 'main':
             self.in_main = False
         elif self.open and tag == self.open[0]:
-            self.spans.append((self.open[1], self.open[2], self.position()))
+            self.spans.append(self.open + (self.position(),))
             self.open = None
 
 
@@ -104,7 +106,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path and 'edit' in query.split('&'):
             with open(path, encoding='utf-8') as f:
                 source = f.read()
-            blocks = [source[a:b] for _, a, b in Blocks(source).spans]
+            blocks = [source[a:b] for _, _, a, b in Blocks(source).spans]
             editor = ('<script>window.EDIT_SOURCE = %s</script>\n<script src="/_edit/editor.js"></script>\n'
                       % json.dumps(blocks, ensure_ascii=False).replace('</', '<\\/'))
             typograf = re.search(r'<script src="[./]*typograf\.min\.js"></script>', source)
@@ -118,18 +120,38 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if not path:
             return self.send_error(404)
         edits = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        with open(path, encoding='utf-8') as f:
-            source = f.read()
-        spans = Blocks(source).spans
-        for edit in sorted(edits, key=lambda e: -e['index']):
-            tag, start, end = spans[edit['index']]
-            if source[start:end] != edit['before']:
-                return self.send_error(409, 'The page changed on disk, reload it')
-            source = source[:start] + edit['after'] + source[end:]
-            if 'balance' in edit:
-                source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(source)
+        # One save at a time: each one checks the file against what the editor expects it to hold.
+        with LOCK:
+            with open(path, encoding='utf-8') as f:
+                source = f.read()
+            spans = Blocks(source).spans
+            for edit in sorted(edits, key=lambda e: -e['index']):
+                name, tag, start, end = spans[edit['index']]
+                if source[start:end] != edit['before']:
+                    return self.send_error(409, 'The page changed on disk, reload it')
+                close = end + len('</%s>' % name)
+                line = source.rfind('\n', 0, tag)
+                indent = source[line + 1:tag]
+                # A removed block takes its own line with it.
+                cut = line if not indent.strip() else tag
+                op = edit.get('op', 'edit')
+                if op == 'edit':
+                    source = source[:start] + edit['after'] + source[end:]
+                    if 'balance' in edit:
+                        source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
+                elif op == 'split':
+                    new = '\n%s<p>%s</p>' % (indent if not indent.strip() else '', edit['next'])
+                    source = source[:start] + edit['after'] + source[end:close] + new + source[close:]
+                elif op == 'remove':
+                    source = source[:cut] + source[close:]
+                elif op == 'merge':
+                    _, _, prev_start, prev_end = spans[edit['index'] - 1]
+                    if source[prev_start:prev_end] != edit['prevBefore']:
+                        return self.send_error(409, 'The page changed on disk, reload it')
+                    source = source[:cut] + source[close:]
+                    source = source[:prev_start] + edit['after'] + source[prev_end:]
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(source)
         self.send_body('{}', 'application/json')
 
 
