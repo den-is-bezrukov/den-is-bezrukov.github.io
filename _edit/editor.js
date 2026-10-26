@@ -389,10 +389,22 @@
     }
   })
 
-  // Links stay links but don't take you away mid-edit; ⌘-click still opens them.
+  // Links stay links but don't take you away mid-edit; ⌘-click follows them. Another page of the site opens in edit mode too,
+  // an anchor on this page just scrolls to its place.
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a')
-    if (a && !e.metaKey) e.preventDefault()
+    if (!a) return
+    if (!e.metaKey) return e.preventDefault()
+    var url = new URL(a.getAttribute('href'), location.href)
+    if (url.origin !== location.origin) return
+    e.preventDefault()
+    if (url.pathname === location.pathname) {
+      var target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)))
+      if (target) target.scrollIntoView()
+      return
+    }
+    url.search = '?edit'
+    window.open(url.href)
   })
   window.addEventListener('beforeunload', function (e) {
     if (pending) e.preventDefault()
