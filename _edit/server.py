@@ -219,6 +219,11 @@ def apply(source, edit, spans, articles):
             lines = edit['lines']
             inner = ''.join('\n%s  <li>%s</li>' % (indent, l) for l in lines) + '\n' + indent if new == 'ul' else '<br>'.join(lines)
             source = source[:start] + inner + '</%s>' % new + source[close:]
+            source = source[:tag] + retag(source[tag:start], name, new, edit.get('cls')) + source[start:]
+            # A list right next to another one joins it: one list, not two with a gap between them.
+            if new == 'ul':
+                source = re.sub(r'</li>(\n[ \t]*)</ul>\s*<ul>(\n[ \t]*)<li>', r'</li>\2<li>', source)
+            return source
         else:
             source = source[:end] + '</%s>' % new + source[close:]
         source = source[:tag] + retag(source[tag:start], name, new, edit.get('cls')) + source[start:]

@@ -75,6 +75,8 @@
       .replace(/&nbsp;/g, ' ')
       .replace(/\u0000/g, '&nbsp;')
       .replace(/(<br>)+$/, '')
+      // Cutting a block or an item inside bold words or a link leaves an empty copy of them behind.
+      .replace(/<(strong|b|em|i|a)(\s[^>]*)?><\/\1>/g, '')
   }
 
   // The indentation trimmed on load goes back around the text, so the file keeps its layout.
@@ -559,7 +561,9 @@
       var lines = el.tagName === 'UL'
         ? Array.prototype.map.call(el.children, function (li) { return clean(li.innerHTML) })
         : clean(el.innerHTML).split('<br>')
-      return structural({ op: 'retype', index: i, before: source[i], tag: tag, cls: cls, lines: lines }, { index: i })
+      // A paragraph right after a list joins that list, so the caret comes back in the list above.
+      var into = tag === 'ul' && el.previousElementSibling && el.previousElementSibling === blocks[i - 1] && blocks[i - 1].tagName === 'UL'
+      return structural({ op: 'retype', index: i, before: source[i], tag: tag, cls: cls, lines: lines }, { index: into ? i - 1 : i })
     }
     var offset = caretOffset(el)
     var next = document.createElement(tag)
