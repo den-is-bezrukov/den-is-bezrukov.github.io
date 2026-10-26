@@ -410,9 +410,18 @@
     var rect = current.getBoundingClientRect(), ring = 6 // the 6px highlight around a block being edited
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
-    tools.style.left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8)) + scrollX + 'px'
-    tools.style.top = rect.top - ring + scrollY - 8 - size.height + 'px'
+    var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
+    var top = rect.top - ring - 8 - size.height
+    // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
+    // block's end, so it never floats over the next block.
+    var pinned = top < 8
+    if (pinned) top = Math.min(8, rect.bottom + ring - size.height)
+    tools.style.position = pinned ? 'fixed' : ''
+    tools.style.left = left + (pinned ? 0 : scrollX) + 'px'
+    tools.style.top = top + (pinned ? 0 : scrollY) + 'px'
   }
+  addEventListener('scroll', placeControls, { passive: true })
+  addEventListener('resize', placeControls)
   function hideControls() {
     tools.classList.remove('shown')
   }
