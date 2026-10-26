@@ -430,8 +430,12 @@
   }
   // § adds a part of the page: a project on the home page, a section in a case.
   group([button('§', home ? askAnchor : addSection)])
+  // List works as a switch: pressed on a list, it turns the list back into Body.
   var styleGroup = group(styles.map(function (s) {
-    var b = button(s[0], function (el) { retype(el, s[1], s[2]) })
+    var b = button(s[0], function (el) {
+      if (s[1] === 'ul' && el.tagName === 'UL') retype(el, 'p', '')
+      else retype(el, s[1], s[2])
+    })
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
