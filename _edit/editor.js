@@ -1,8 +1,8 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
 // Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
 // ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
-// A toolbar above the block with the caret switches its style, evens out its lines (Balance), opens the shortcuts (?),
-// adds a section or a project (§) and moves the block (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
+// A toolbar above the block with the caret switches its style, adds a section or a project (§), evens out its lines (Balance),
+// opens the shortcuts (?) and moves the block (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
   var source = window.EDIT_SOURCE
@@ -362,6 +362,8 @@
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
+  // § adds a part of the page: a project on the home page, a section in a case.
+  group([button('§', home ? askAnchor : addSection)])
   // Balance evens out the block's lines: it gets the balance class, on the site too.
   var balanceButton = button('Balance', function (el) {
     el.classList.toggle('balance')
@@ -371,8 +373,6 @@
   })
   group([balanceButton])
   group([button('?', function () { help.hidden = !help.hidden })])
-  // § adds a part of the page: a project on the home page, a section in a case.
-  group([button('§', home ? askAnchor : addSection)])
   group([button('↑', function (el) { move(el, -1) }), button('↓', function (el) { move(el, 1) })])
 
   var help = document.createElement('pre')
