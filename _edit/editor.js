@@ -47,8 +47,7 @@
   }
 
   // Typograf's non-breaking spaces and the spans that keep hyphenated words whole are only layout, so the file never gets them;
-  // the browser also keeps typed spaces as &nbsp; and leaves a <br> in a cleared line. Hand-set ones stay as &nbsp;,
-  // and a line break set by hand keeps a space before it for the narrow screens that hide it.
+  // the browser also keeps typed spaces as &nbsp; and leaves a <br> at the end of a cleared line. Hand-set ones stay as &nbsp;.
   function clean(html) {
     return html
       .replace(/<span class="nw">([^<]*)<\/span>/g, '$1')
@@ -56,7 +55,6 @@
       .replace(/&nbsp;/g, ' ')
       .replace(/\u0000/g, '&nbsp;')
       .replace(/<br>$/, '')
-      .replace(/\s*<br class="wide">\s*/g, ' <br class="wide">')
   }
 
   // The indentation trimmed on load goes back around the text, so the file keeps its layout.
@@ -196,13 +194,17 @@
     source[i - 1] = after
     source.splice(i, 1)
     blocks.splice(i, 1)
-    el.remove()
     prev.savedHtml = a + ' ' + b
-    prev.focus()
-    var range = caret(prev, 0)
-    range.setStartBefore(mark)
-    range.collapse(true)
+    // The caret goes where the two paragraphs meet. Removing the focused block can fire focusout and a save right away,
+    // so the marker and the bookkeeping are done before it goes.
+    var spot = document.createRange()
+    spot.setStartBefore(mark)
+    spot.collapse(true)
     mark.remove()
+    el.remove()
+    prev.focus()
+    getSelection().removeAllRanges()
+    getSelection().addRange(spot)
   }
 
   function atStart(el) {
@@ -364,9 +366,7 @@
       e.preventDefault()
       if (el.classList.contains('list')) return
       if (e.shiftKey) {
-        var br = document.createElement('br')
-        br.className = 'wide'
-        insert(br)
+        insert(document.createElement('br'))
       } else {
         split(el)
       }
