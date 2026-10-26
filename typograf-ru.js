@@ -39,8 +39,8 @@
   nodes.forEach(function (node) {
     var text = node.nodeValue
     var result = tp.execute(text)
-    // A sentence's first word never ends a line alone («…и лендинги. Собрал»): it moves down with the next word.
-    result = result.replace(/([.!?…] \S+) (?=\S)/g, '$1' + NBSP)
+    // The first word of a sentence or of a clause after a comma never ends a line alone («…и лендинги. Собрал», «…и приложения, собираю»): it moves down with the next word.
+    result = result.replace(/([.!?…,] \S+) (?=\S)/g, '$1' + NBSP)
     if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
     if (result !== text) node.nodeValue = result
     keepHyphenated(node)
