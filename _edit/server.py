@@ -1,6 +1,6 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
-a block's text and style, the balance class from «Ровные строки», paragraphs split, joined, removed or moved,
-a new section or project. Every write keeps the version it replaces, so ⌘Z can step back through them.
+a block's text and style, the balance class from Wrap, paragraphs and list items split, joined, removed or moved,
+a new section, project or spacer. Every write keeps the version it replaces, so ⌘Z can step back through them.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
 it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
@@ -164,7 +164,12 @@ def apply(source, edit, spans, articles):
         if 'balance' in edit:
             source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
     elif op == 'split':
-        source = source[:start] + edit['after'] + source[end:close] + '\n%s<p>%s</p>' % (indent, edit['next']) + source[close:]
+        # A list item splits into two items; anything else leaves a plain paragraph behind.
+        cls = edit.get('cls') or ''
+        if cls not in ('', 'bullet'):
+            raise Refused('bad class')
+        attr = ' class="%s"' % cls if cls else ''
+        source = source[:start] + edit['after'] + source[end:close] + '\n%s<p%s>%s</p>' % (indent, attr, edit['next']) + source[close:]
     elif op == 'insert':
         source = source[:close] + ''.join('\n' + indent + html for html in edit['blocks']) + source[close:]
     elif op == 'remove':

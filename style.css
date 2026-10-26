@@ -1,7 +1,8 @@
 /* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. */
 :root {
   /* Spacing scale: the name is the size in rem times 100 (space-150 = 1.5rem = 24px), so a step in between fits without renaming.
-     Every margin and padding comes from it: 800 between projects, 300 between groups, 150 between paragraphs. */
+     Every margin and padding comes from it: 800 between projects, 300 between groups, 150 between paragraphs, 050 between list items. */
+  --space-050: 0.5rem;
   --space-100: 1rem;
   --space-150: 1.5rem;
   --space-200: 2rem;
@@ -43,7 +44,19 @@ h3 { margin-top: var(--space-300); }
 p { margin: 0 0 var(--space-150); text-wrap: pretty; }
 /* The intro under the name: a size up from the text. */
 p.lead { font-size: 1.25rem; line-height: 1.5; }
-/* A block switched to «Ровные строки» in edit mode gets lines of nearly equal length. */
+/* List: a line with a bullet hanging in the indent; items stand closer to each other than paragraphs. */
+p.bullet { position: relative; padding-left: var(--space-150); }
+p.bullet::before { content: "•"; position: absolute; left: 0; width: var(--space-150); text-align: center; }
+p.bullet:has(+ p.bullet) { margin-bottom: var(--space-050); }
+/* Spacer: an empty block that adds a step of the spacing scale to the gap where it stands. */
+p.spacer { margin: 0; height: var(--space-150); }
+p.space-100 { height: var(--space-100); }
+p.space-200 { height: var(--space-200); }
+p.space-300 { height: var(--space-300); }
+p.space-400 { height: var(--space-400); }
+p.space-600 { height: var(--space-600); }
+p.space-800 { height: var(--space-800); }
+/* A block switched to Wrap: B in edit mode gets lines of nearly equal length. */
 .balance { text-wrap: balance; }
 strong { font-weight: 600; }
 a {

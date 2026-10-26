@@ -1,8 +1,9 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
-// Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
-// ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
-// A toolbar above the block with the caret adds a section or a project (§), switches the block's style, evens out its lines (Balance),
-// opens the shortcuts (?) and moves the block (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
+// Enter starts a new paragraph (a new item in a list), Backspace at the start of one joins it to the paragraph above; Shift+Enter
+// sets a line break, ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
+// A toolbar above the block with the caret switches the block's style and its line layout (Pretty, Balance) and moves it (↓ ↑);
+// a second one over the block's right end adds a section or a project (§) or a spacer (⁋).
+// ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
   var source = window.EDIT_SOURCE
@@ -10,24 +11,27 @@
 
   var style = document.createElement('style')
   style.textContent =
-    '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
+    '[contenteditable]:focus, main .spacer:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
+    '.edit-link, .edit-tools { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    // Every button is 40px tall with 8px either side of its label, so any two labels are 16px apart; the toolbar's ends get
-    // 8px more, 16px in all; the buttons touch, so the pointer goes straight from one to the next.
-    // The current one is set at 600; a hidden copy of the label at 600 keeps each button as wide either way.
-    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0 8px; color: var(--muted); }' +
+    // Every button is 40px tall with 8px either side of its label, so any two labels are 16px apart; each group gets 8px more
+    // at its ends, 16px from the toolbar's edge or the 6% line between groups; the buttons touch, so the pointer goes straight
+    // from one to the next. Labels are set at 500, the current style at 600; a hidden copy of the label at 600 keeps each
+    // button as wide either way.
+    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
+    '.edit-tools span { padding: 0 8px; }' +
+    '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 40px; padding: 0 8px; cursor: pointer; }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 40px; padding: 0 8px; font-weight: 500; cursor: pointer; }' +
     '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
-    '.edit-help { position: fixed; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); margin: 0; white-space: pre-wrap; line-height: 1.8; }' +
-    '.edit-help[hidden] { display: none; }' +
-    '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
+    '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }' +
+    // A spacer has no text, so in edit mode it shows as a faint ground to click on.
+    'main .spacer { background: color-mix(in srgb, currentColor 4%, transparent); border-radius: 2px; cursor: pointer; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
   status.className = 'edit-status'
@@ -73,8 +77,22 @@
     return before.match(/^\s*/)[0] + html + before.match(/\s*$/)[0]
   }
 
+  // A spacer is an empty paragraph, class spacer and a step of the spacing scale; it takes focus but no typing.
+  var SPACES = ['100', '150', '200', '300', '400', '600', '800']
+  function spacer(el) {
+    return el.classList.contains('spacer')
+  }
+  function spaceOf(el) {
+    var m = el.className.match(/\bspace-(\d+)/)
+    return m ? m[1] : '150'
+  }
+  function bullet(el) {
+    return el.classList.contains('bullet')
+  }
+
   function setup(el) {
-    el.contentEditable = 'plaintext-only'
+    if (spacer(el)) el.tabIndex = 0
+    else el.contentEditable = 'plaintext-only'
     el.spellcheck = true
     el.savedHtml = clean(el.innerHTML)
     el.savedBalance = el.classList.contains('balance')
@@ -150,7 +168,7 @@
     return el.tagName === 'P' && !el.className.replace('balance', '').trim()
   }
 
-  // Enter: the text after the caret becomes a new paragraph below.
+  // Enter: the text after the caret becomes a new paragraph below; in a list, a new item.
   function split(el) {
     var sel = getSelection()
     if (!sel.rangeCount) return
@@ -163,7 +181,8 @@
     var holder = document.createElement('div')
     holder.appendChild(tail.extractContents())
     var first = clean(el.innerHTML).replace(/\s+$/, ''), second = clean(holder.innerHTML).replace(/^\s+/, '')
-    var next = document.createElement('p')
+    var next = document.createElement('p'), cls = bullet(el) ? 'bullet' : ''
+    next.className = cls
     el.innerHTML = first
     next.innerHTML = second
     markNbsp(el)
@@ -172,7 +191,7 @@
     setup(next)
     el.savedHtml = first
     var after = indent(source[i], first)
-    send([{ op: 'split', index: i, before: source[i], after: after, next: second }])
+    send([{ op: 'split', index: i, before: source[i], after: after, next: second, cls: cls }])
     source[i] = after
     source.splice(i + 1, 0, second)
     blocks.splice(i + 1, 0, next)
@@ -180,12 +199,14 @@
     caret(next, 0)
   }
 
-  // Backspace at the start of a paragraph joins it to the paragraph above; an empty one is simply removed.
+  // Backspace at the start of a paragraph joins it to the paragraph or list item above; an empty one is simply removed,
+  // and a spacer above goes instead.
   function join(el) {
     var i = blocks.indexOf(el), prev = blocks[i - 1]
     if (!prev) return
     var empty = !el.textContent.trim()
-    if (!empty && !(plain(el) && plain(prev))) return
+    if (!empty && spacer(prev)) return removeBlock(prev, el)
+    if (!empty && !(plain(el) && (plain(prev) || bullet(prev)))) return
     save()
     if (empty) {
       send([{ op: 'remove', index: i, before: source[i] }])
@@ -216,6 +237,20 @@
     prev.focus()
     getSelection().removeAllRanges()
     getSelection().addRange(spot)
+  }
+
+  // A block goes away; the caret goes to `then`, or to the end of the block above (below, for the first one).
+  function removeBlock(el, then) {
+    var i = blocks.indexOf(el)
+    save()
+    send([{ op: 'remove', index: i, before: source[i] }])
+    source.splice(i, 1)
+    blocks.splice(i, 1)
+    var target = then || blocks[i - 1] || blocks[i]
+    el.remove()
+    if (then || !target) return
+    target.focus()
+    if (!spacer(target)) placeCaret(target, null)
   }
 
   function atStart(el) {
@@ -325,110 +360,120 @@
   })
 
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
-  // the block as it grows; plain text, what is on (the current style, Balance) in the text colour.
+  // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
-  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
+  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta'], ['List', 'p', 'bullet']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
-    var cls = el.classList.contains('meta') ? 'meta' : el.classList.contains('lead') ? 'lead' : ''
+    var cls = ['meta', 'lead', 'bullet'].filter(function (c) { return el.classList.contains(c) })[0]
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
   // Rows of links and breadcrumbs keep their markup; they can only move.
   function fixed(el) {
     return el.classList.contains('list') || el.classList.contains('crumbs')
   }
-  // Only the styles this page already uses are offered.
-  var used = {}
-  blocks.forEach(function (el) { if (!fixed(el)) used[styleOf(el)] = true })
-  var styles = STYLES.filter(function (s) { return used[s[1] + (s[2] ? '.' + s[2] : '')] })
+  // Every style is offered but H3, which only a page that already has section headings gets.
+  var offered = {}
+  var styles = STYLES.filter(function (s) {
+    return s[1] !== 'h3' || blocks.some(function (el) { return el.tagName === 'H3' })
+  })
+  styles.forEach(function (s) { offered[s[1] + (s[2] ? '.' + s[2] : '')] = true })
   var home = !!document.querySelector('.about')
 
-  var tools = document.createElement('div')
-  tools.className = 'edit-tools'
+  var tools = document.createElement('div'), adds = document.createElement('div')
+  tools.className = adds.className = 'edit-tools'
   document.body.appendChild(tools)
-  function group(buttons) {
+  document.body.appendChild(adds)
+  function group(buttons, bar) {
     var span = document.createElement('span')
     buttons.forEach(function (b) { span.appendChild(b) })
-    tools.appendChild(span)
+    ;(bar || tools).appendChild(span)
     return span
   }
-  function button(label, action) {
+  function label(b, text) {
+    b.textContent = text
+    b.dataset.label = text
+  }
+  function button(text, action) {
     var b = document.createElement('button')
-    b.textContent = label
-    b.dataset.label = label
+    label(b, text)
     // Pressing a button, with a mouse or a finger, leaves the caret in the block.
     b.addEventListener('pointerdown', function (e) { e.preventDefault() })
     b.addEventListener('mousedown', function (e) { e.preventDefault() })
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
-  // § adds a part of the page: a project on the home page, a section in a case.
-  group([button('§', home ? askAnchor : addSection)])
   var styleGroup = group(styles.map(function (s) {
     var b = button(s[0], function (el) { retype(el, s[1], s[2]) })
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
-  // Balance evens out the block's lines: it gets the balance class, on the site too.
-  var balanceButton = button('Balance', function (el) {
+  // A spacer has its step of the scale in place of the styles; a press takes the next one.
+  var spaceButton = button('Space: 300', respace)
+  var spaceGroup = group([spaceButton])
+  // The block's line layout, named as it is now: Pretty as the site lays out text everywhere, Balance with lines of nearly
+  // equal length (the balance class, on the site too); a press switches to the other.
+  var wrapButton = button('Pretty', function (el) {
     el.classList.toggle('balance')
     render()
     placeControls()
     save()
   })
-  group([balanceButton])
-  var helpButton = button('?', function () { help.hidden = !help.hidden })
-  group([helpButton])
-  group([button('↑', function (el) { move(el, -1) }), button('↓', function (el) { move(el, 1) })])
+  var wrapGroup = group([wrapButton])
+  group([button('↓', function (el) { move(el, 1) })])
+  group([button('↑', function (el) { move(el, -1) })])
+  // § adds a part of the page: a project on the home page, a section in a case; ⁋ a spacer.
+  group([button('§', home ? askAnchor : addSection)], adds)
+  group([button('⁋', addSpacer)], adds)
 
-  var help = document.createElement('pre')
-  help.className = 'edit-help'
-  help.hidden = true
-  help.textContent = [
-    'Enter — новый абзац',
-    'Shift+Enter — перенос строки',
-    'Backspace в начале абзаца — склеить с предыдущим',
-    '⌥Пробел — неразрывный пробел',
-    '⌘K или ⌘V с адресом поверх слов — ссылка',
-    '⌥⌘1, ⌥⌘2, ⌥⌘3 — H1, H2, H3',
-    '⌥⌘0 — Body, ⌥⌘8 — Meta',
-    '⌘⇧↑, ⌘⇧↓ — переставить блок, в названии проекта — весь проект',
-    '⌘Z, ⇧⌘Z — отменить, вернуть',
-    '⌘S — сохранить сразу'
-  ].join('\n')
-  document.body.appendChild(help)
 
   function render() {
     if (!current) return
-    styleGroup.hidden = fixed(current)
+    var gap = spacer(current)
+    styleGroup.hidden = fixed(current) || gap
+    spaceGroup.hidden = !gap
+    wrapGroup.hidden = gap
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
-    balanceButton.classList.toggle('on', current.classList.contains('balance'))
+    if (gap) label(spaceButton, 'Space: ' + spaceOf(current))
+    else label(wrapButton, current.classList.contains('balance') ? 'Balance' : 'Pretty')
   }
   function placeControls() {
     if (!current) return
     var rect = current.getBoundingClientRect(), ring = 6 // the 6px highlight around a block being edited
-    var size = tools.getBoundingClientRect()
+    var size = tools.getBoundingClientRect(), more = adds.getBoundingClientRect(), width = document.documentElement.clientWidth
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
-    var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
+    var left = Math.max(8, Math.min(rect.left - ring, width - size.width - 8))
     var top = rect.top - ring - 8 - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
     if (pinned) top = Math.min(8, rect.bottom + ring - size.height)
-    tools.style.position = pinned ? 'fixed' : ''
-    tools.style.left = left + (pinned ? 0 : scrollX) + 'px'
-    tools.style.top = top + (pinned ? 0 : scrollY) + 'px'
+    // § and ⁋ sit level with it over the right end of the highlight; when the two would meet, they go 8px above it.
+    var right = Math.min(rect.right + ring, width - 8) - more.width, high = top
+    if (right < left + size.width + 8) {
+      right = left
+      high = top - 8 - more.height
+    }
+    place(tools, left, top, pinned)
+    place(adds, right, high, pinned)
+  }
+  function place(bar, left, top, pinned) {
+    bar.style.position = pinned ? 'fixed' : ''
+    bar.style.left = left + (pinned ? 0 : scrollX) + 'px'
+    bar.style.top = top + (pinned ? 0 : scrollY) + 'px'
   }
   addEventListener('scroll', placeControls, { passive: true })
   addEventListener('resize', placeControls)
   function hideControls() {
     tools.classList.remove('shown')
+    adds.classList.remove('shown')
   }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return
     current = e.target
     tools.classList.add('shown')
+    adds.classList.add('shown')
     render()
     placeControls()
   })
@@ -519,6 +564,31 @@
     placeControls()
   }
 
+  // ⁋ puts a spacer of space-300 after the block and selects it, so the next press on its step changes it.
+  function addSpacer(el) {
+    var i = blocks.indexOf(el), html = '<p class="spacer space-300"></p>'
+    save()
+    var s = document.createElement('p')
+    s.className = 'spacer space-300'
+    el.after(s)
+    setup(s)
+    send([{ op: 'insert', index: i, before: source[i], blocks: [html] }])
+    source.splice(i + 1, 0, '')
+    blocks.splice(i + 1, 0, s)
+    current = s
+    s.focus()
+    render()
+    placeControls()
+  }
+  function respace(el) {
+    var i = blocks.indexOf(el), step = SPACES[(SPACES.indexOf(spaceOf(el)) + 1) % SPACES.length]
+    save()
+    el.className = 'spacer space-' + step
+    send([{ op: 'retype', index: i, before: source[i], tag: 'p', cls: el.className }])
+    render()
+    placeControls()
+  }
+
   // § on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
   function askAnchor(el) {
     asking = { kind: 'anchor', block: el }
@@ -596,19 +666,28 @@
   })
 
   document.addEventListener('keydown', function (e) {
-    var el = e.target.isContentEditable && blocks.indexOf(e.target) >= 0 ? e.target : null
+    var block = blocks.indexOf(e.target) >= 0 ? e.target : null
+    var el = block && block.isContentEditable ? block : null
     if (el && e.key === 'Enter') {
       e.preventDefault()
       if (el.classList.contains('list')) return
       if (e.shiftKey) {
         insert(document.createElement('br'))
+      } else if (bullet(el) && !el.textContent.trim()) {
+        retype(el, 'p', '')
       } else {
         split(el)
       }
     }
+    // At the start of a list item Backspace turns it into a plain paragraph first, as Enter in an empty item does.
     if (el && e.key === 'Backspace' && atStart(el)) {
       e.preventDefault()
-      join(el)
+      if (bullet(el)) retype(el, 'p', '')
+      else join(el)
+    }
+    if (block && spacer(block) && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault()
+      removeBlock(block)
     }
     if (el && e.altKey && e.code === 'Space') {
       e.preventDefault()
@@ -621,27 +700,22 @@
     if (el && e.metaKey && e.altKey && KEYS[e.code]) {
       e.preventDefault()
       var style = KEYS[e.code].split('.')
-      if (used[KEYS[e.code]]) retype(el, style[0], style[1] || '')
+      if (offered[KEYS[e.code]]) retype(el, style[0], style[1] || '')
     }
-    if (el && e.metaKey && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (block && e.metaKey && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault()
-      move(el, e.key === 'ArrowUp' ? -1 : 1)
+      move(block, e.key === 'ArrowUp' ? -1 : 1)
     }
     if (e.target !== linkField && e.metaKey && e.code === 'KeyZ') {
       e.preventDefault()
       step(e.shiftKey ? 'redo' : 'undo')
     }
-    if (e.key === 'Escape' && !help.hidden) help.hidden = true
     if ((e.metaKey || e.ctrlKey) && e.code === 'KeyS') {
       e.preventDefault()
       save()
     }
   })
 
-  // The shortcuts close with a press anywhere outside them; ? itself toggles them.
-  document.addEventListener('pointerdown', function (e) {
-    if (!help.hidden && !help.contains(e.target) && !helpButton.contains(e.target)) help.hidden = true
-  })
   // Links stay links but don't take you away mid-edit; ⌘-click follows them. Another page of the site opens in edit mode too,
   // an anchor on this page just scrolls to its place.
   document.addEventListener('click', function (e) {
