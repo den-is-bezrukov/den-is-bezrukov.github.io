@@ -1,8 +1,8 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
 // Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
-// ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link; «Ровные строки» evens out a block's lines.
-// A toolbar above the block with the caret switches its style, moves it, adds a section or a project, steps back through
-// saves and opens the shortcuts; ⌥⌘1/2/3/0/8, ⌘⇧↑/↓ and ⌘Z/⇧⌘Z do the same from the keyboard.
+// ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
+// A toolbar above the block with the caret switches its style, adds a section or a project, moves the block, evens out
+// its lines (≈) and opens the shortcuts (?); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
   var source = window.EDIT_SOURCE
@@ -13,18 +13,17 @@
     '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    '.edit-link, .edit-balance, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
-    '.edit-link { position: fixed; width: 320px; }' +
-    '.edit-balance { display: none; position: absolute; color: var(--muted); cursor: pointer; }' +
-    '.edit-balance.shown { display: block; }' +
-    '.edit-balance.on { color: var(--text); background: color-mix(in srgb, var(--text) 8%, var(--bg)); }' +
-    '.edit-tools { display: none; position: absolute; gap: 20px; color: var(--muted); }' +
+    // ▲ ▼ ≈ are in Inter but not in the parts of it Google serves, so they come from the Inter installed on this Mac.
+    '@font-face { font-family: "Inter Local"; src: local("Inter"), local("Inter Regular"), local("Inter-Regular"); }' +
+    '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, "Inter Local", system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
+    '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
+    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; gap: 4px 20px; max-width: calc(100vw - 16px); color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; }' +
     '.edit-tools span { gap: 12px; }' +
     '.edit-tools span[hidden] { display: none; }' +
     '.edit-tools button { all: unset; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
-    '.edit-help { position: fixed; left: 16px; bottom: 16px; margin: 0; white-space: pre; line-height: 1.8; }' +
+    '.edit-help { position: fixed; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); margin: 0; white-space: pre-wrap; line-height: 1.8; }' +
     '.edit-help[hidden] { display: none; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
@@ -323,22 +322,9 @@
     timer = setTimeout(save, 700)
   })
 
-  // «Ровные строки» evens out the lines of the block with the caret: the block gets the balance class, on the site too.
-  // The button sits above that block, 8px off its highlight, right edge on the highlight's right edge, and follows the block as it grows.
+  // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
+  // the block as it grows; plain text, what is on (the current style, even lines) in the text colour.
   var current = null
-  var toggle = document.createElement('button')
-  toggle.className = 'edit-balance'
-  toggle.textContent = 'Ровные строки'
-  document.body.appendChild(toggle)
-  toggle.addEventListener('mousedown', function (e) { e.preventDefault() })
-  toggle.addEventListener('click', function () {
-    if (!current) return
-    toggle.classList.toggle('on', current.classList.toggle('balance'))
-    placeControls()
-    save()
-  })
-
-  // The toolbar sits above the block on the left, as «Ровные строки» does on the right: plain text, the current style in the text colour.
   var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
@@ -367,6 +353,8 @@
   function button(label, action) {
     var b = document.createElement('button')
     b.textContent = label
+    // Pressing a button, with a mouse or a finger, leaves the caret in the block.
+    b.addEventListener('pointerdown', function (e) { e.preventDefault() })
     b.addEventListener('mousedown', function (e) { e.preventDefault() })
     b.addEventListener('click', function () { if (current) action(current) })
     return b
@@ -376,10 +364,17 @@
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
-  group([button('↑', function (el) { move(el, -1) }), button('↓', function (el) { move(el, 1) })])
-  group([button('Отменить', function () { step('undo') }), button('Вернуть', function () { step('redo') })])
   group([home ? button('+ Проект', askAnchor) : button('+ Раздел', addSection)])
-  group([button('Справка', function () { help.hidden = !help.hidden })])
+  group([button('▲', function (el) { move(el, -1) }), button('▼', function (el) { move(el, 1) })])
+  // ≈ evens out the block's lines: it gets the balance class, on the site too.
+  var balanceButton = button('≈', function (el) {
+    el.classList.toggle('balance')
+    render()
+    placeControls()
+    save()
+  })
+  group([balanceButton])
+  group([button('?', function () { help.hidden = !help.hidden })])
 
   var help = document.createElement('pre')
   help.className = 'edit-help'
@@ -403,25 +398,22 @@
     styleGroup.hidden = fixed(current)
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
-    toggle.classList.toggle('on', current.classList.contains('balance'))
+    balanceButton.classList.toggle('on', current.classList.contains('balance'))
   }
   function placeControls() {
     if (!current) return
     var rect = current.getBoundingClientRect(), ring = 6 // the 6px highlight around a block being edited
-    var t = toggle.getBoundingClientRect(), b = tools.getBoundingClientRect()
-    toggle.style.left = rect.right + ring + scrollX - t.width + 'px'
-    toggle.style.top = rect.top - ring + scrollY - 8 - t.height + 'px'
-    tools.style.left = rect.left - ring + scrollX + 'px'
-    tools.style.top = rect.top - ring + scrollY - 8 - b.height + 'px'
+    var size = tools.getBoundingClientRect()
+    // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
+    tools.style.left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8)) + scrollX + 'px'
+    tools.style.top = rect.top - ring + scrollY - 8 - size.height + 'px'
   }
   function hideControls() {
-    toggle.classList.remove('shown')
     tools.classList.remove('shown')
   }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return
     current = e.target
-    toggle.classList.add('shown')
     tools.classList.add('shown')
     render()
     placeControls()
