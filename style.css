@@ -57,14 +57,6 @@ p.lead { font-size: 1.25rem; line-height: 1.5; }
 ul { margin: 0 0 var(--space-150); padding-left: var(--space-150); }
 li { text-wrap: pretty; }
 li + li { margin-top: var(--space-050); }
-/* Spacer: an empty block that adds a step of the spacing scale to the gap where it stands. */
-p.spacer { margin: 0; height: var(--space-150); }
-p.space-100 { height: var(--space-100); }
-p.space-200 { height: var(--space-200); }
-p.space-300 { height: var(--space-300); }
-p.space-400 { height: var(--space-400); }
-p.space-600 { height: var(--space-600); }
-p.space-800 { height: var(--space-800); }
 /* A block switched to Wrap: B in edit mode gets lines of nearly equal length. */
 .balance { text-wrap: balance; }
 strong { font-weight: 600; }

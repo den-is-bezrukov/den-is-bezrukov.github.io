@@ -1,6 +1,6 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
 a block's text and style, the balance class from Pretty/Balance, paragraphs split, joined, removed or moved,
-a new section, project or spacer. Every write keeps the version it replaces, so ⌘Z can step back through them.
+a new section or project. Every write keeps the version it replaces, so ⌘Z can step back through them.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
 it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
