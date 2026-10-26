@@ -1,7 +1,7 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
 // Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
 // ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
-// A toolbar above the block with the caret switches its style, adds a section or a project (§), evens out its lines (Balance),
+// A toolbar above the block with the caret adds a section or a project (§), switches the block's style, evens out its lines (Balance),
 // opens the shortcuts (?) and moves the block (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
@@ -357,13 +357,13 @@
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
+  // § adds a part of the page: a project on the home page, a section in a case.
+  group([button('§', home ? askAnchor : addSection)])
   var styleGroup = group(styles.map(function (s) {
     var b = button(s[0], function (el) { retype(el, s[1], s[2]) })
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
-  // § adds a part of the page: a project on the home page, a section in a case.
-  group([button('§', home ? askAnchor : addSection)])
   // Balance evens out the block's lines: it gets the balance class, on the site too.
   var balanceButton = button('Balance', function (el) {
     el.classList.toggle('balance')
