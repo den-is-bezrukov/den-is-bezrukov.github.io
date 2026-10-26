@@ -1,16 +1,16 @@
-/* Base 16px, sizes in rem. Type: 3 / 1.5 / 1.125 / 1rem. Gaps: 8rem and 4rem between blocks, 0.75–1.25rem inside them. */
+/* Base 16px, sizes in rem. Type: headings 3 / 1.5rem, text and grey service lines 1rem, the grey at 500. Gaps: 8rem and 4rem between blocks, a text line between paragraphs. */
 :root {
   --gap: 8rem;
   --gap-s: 4rem;
   --bg: #ffffff;
-  --text: #000000;
-  /* Two colours only: the grey is the text colour at 60%. */
-  --muted: color-mix(in srgb, var(--text) 60%, transparent);
+  --text: #1d1d1f;
+  /* Two colours only: near-black text, as Apple sets it, and the grey as the text colour at 65%, which keeps it above 4.5:1. */
+  --muted: color-mix(in srgb, var(--text) 65%, transparent);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #000000;
-    --text: #ffffff;
+    --text: #f5f5f7;
   }
 }
 body {
@@ -25,38 +25,38 @@ main {
   margin: 0 auto;
   padding: var(--gap) 24px 6rem;
 }
-/* Three heading steps: name and project page title, project, section of a full case. Inter's optical size axis tightens the big ones by itself. */
-h1, h2, h3 { font-weight: 500; }
+/* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Bold in the text has the same weight. Inter's optical size axis tightens the big ones by itself. */
+h1, h2, h3 { font-weight: 600; }
 h1 {
   margin: 0 0 1.25rem;
   font-size: 3rem;
   line-height: 1.1;
 }
-h2 {
+h2, h3 {
   margin: 0 0 0.75rem;
   font-size: 1.5rem;
   line-height: 1.3;
 }
-h3 {
-  margin: 2rem 0 0.5rem;
-  font-size: 1.125rem;
-  line-height: 1.4;
-}
-/* Text fills its lines; only a too-short last line pulls a few words down. */
-p { margin: 0 0 0.75rem; text-wrap: pretty; }
+h3 { margin-top: 3rem; }
+/* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand a full line apart. */
+p { margin: 0 0 1.5rem; text-wrap: pretty; }
 /* The intro under the name: lines of about 65 characters, a little shorter than the column. */
 header h1 + p { max-width: 36em; }
 strong { font-weight: 600; }
 a {
   color: inherit;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-decoration-color: color-mix(in srgb, currentColor 25%, transparent);
   text-decoration-thickness: 2.5%;
   text-underline-offset: 30%;
 }
-a:hover { text-decoration-color: currentColor; }
+/* Link rows, breadcrumbs and a linked title read as navigation: no underline until hover. Links in the text keep it. */
+.list a, .crumbs a, h2 a { text-decoration-color: transparent; }
+/* On hover the underline darkens to 50% of the link colour, still lighter than the letters. */
+a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
 .nw { white-space: nowrap; }
-.contacts, .meta, .credits, .crumbs { color: var(--muted); }
+/* Grey service lines are a step heavier than the text, so the lighter colour holds its own next to it. */
+.contacts, .meta, .credits, .crumbs { color: var(--muted); font-weight: 500; }
 .contacts { margin-top: 1rem; }
 /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
 .list { line-height: 1.75; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
