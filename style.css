@@ -20,8 +20,8 @@
   --space-600: 6rem;
   --space-800: 8rem;
   --bg: #ffffff;
-  --text: #1a1a1a;
-  /* Two colours only: text at 90% black (90% white in the dark theme) and a grey, #808080 on white (3.95:1, held up by its weight of 500), the text colour at 65% in the dark theme. */
+  --text: #000000;
+  /* Two colours only: black text (90% white in the dark theme) and a grey, #808080 on white (3.95:1, held up by its weight of 500), the text colour at 65% in the dark theme. */
   --muted: #808080;
 }
 /* The dark theme is off for now; to bring it back, take it out of this comment.
