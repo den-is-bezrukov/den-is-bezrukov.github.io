@@ -53,10 +53,10 @@ h3 { margin-top: var(--space-300); }
 p { margin: 0 0 var(--space-150); text-wrap: pretty; }
 /* The intro under the name: a size up from the text. */
 p.lead { font-size: 1.25rem; line-height: 1.5; }
-/* List: a line with a bullet hanging in the indent; items stand closer to each other than paragraphs. */
-p.bullet { position: relative; padding-left: var(--space-150); }
-p.bullet::before { content: "•"; position: absolute; left: 0; width: var(--space-150); text-align: center; }
-p.bullet:has(+ p.bullet) { margin-bottom: var(--space-050); }
+/* List: bullets hanging in the indent, items closer to each other than paragraphs. */
+ul { margin: 0 0 var(--space-150); padding-left: var(--space-150); }
+li { text-wrap: pretty; }
+li + li { margin-top: var(--space-050); }
 /* Spacer: an empty block that adds a step of the spacing scale to the gap where it stands. */
 p.spacer { margin: 0; height: var(--space-150); }
 p.space-100 { height: var(--space-100); }

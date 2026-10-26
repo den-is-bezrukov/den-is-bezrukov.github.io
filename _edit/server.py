@@ -1,5 +1,5 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
-a block's text and style, the balance class from Wrap, paragraphs and list items split, joined, removed or moved,
+a block's text and style, the balance class from Pretty/Balance, paragraphs split, joined, removed or moved,
 a new section, project or spacer. Every write keeps the version it replaces, so ⌘Z can step back through them.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
@@ -18,7 +18,7 @@ import webbrowser
 from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EDITABLE = ('h1', 'h2', 'h3', 'p')
+EDITABLE = ('h1', 'h2', 'h3', 'p', 'ul')
 PORT = 8765
 LOCK = threading.Lock()
 # Earlier versions of every page, also kept as files in _edit/history (not in git), the last 200 per page.
@@ -35,7 +35,7 @@ PROJECT = '''<article id="{id}">
 
 
 class Blocks(HTMLParser):
-    """Every h1, h2, h3 and p inside <main> in document order, as (tag name, where its start tag begins, where its inner HTML
+    """Every h1, h2, h3, p and ul inside <main> in document order, as (tag name, where its start tag begins, where its inner HTML
     begins and ends), and every <article> as (id, where it begins, where it ends)."""
 
     def __init__(self, source):
@@ -164,12 +164,7 @@ def apply(source, edit, spans, articles):
         if 'balance' in edit:
             source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
     elif op == 'split':
-        # A list item splits into two items; anything else leaves a plain paragraph behind.
-        cls = edit.get('cls') or ''
-        if cls not in ('', 'bullet'):
-            raise Refused('bad class')
-        attr = ' class="%s"' % cls if cls else ''
-        source = source[:start] + edit['after'] + source[end:close] + '\n%s<p%s>%s</p>' % (indent, attr, edit['next']) + source[close:]
+        source = source[:start] + edit['after'] + source[end:close] + '\n%s<p>%s</p>' % (indent, edit['next']) + source[close:]
     elif op == 'insert':
         source = source[:close] + ''.join('\n' + indent + html for html in edit['blocks']) + source[close:]
     elif op == 'remove':
@@ -184,7 +179,13 @@ def apply(source, edit, spans, articles):
         new = edit['tag']
         if new not in EDITABLE:
             raise Refused('bad tag')
-        source = source[:end] + '</%s>' % new + source[close:]
+        if 'lines' in edit:
+            # Into a list, each line becomes an item on a line of its own; out of one, the items become lines of one block.
+            lines = edit['lines']
+            inner = ''.join('\n%s  <li>%s</li>' % (indent, l) for l in lines) + '\n' + indent if new == 'ul' else '<br>'.join(lines)
+            source = source[:start] + inner + '</%s>' % new + source[close:]
+        else:
+            source = source[:end] + '</%s>' % new + source[close:]
         source = source[:tag] + retag(source[tag:start], name, new, edit.get('cls')) + source[start:]
     elif op == 'move':
         other = spans[edit['index'] + edit['dir']]

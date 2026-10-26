@@ -5,7 +5,7 @@
 // a second one over the block's right end adds a section or a project (§) or a spacer (⁋).
 // ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
-  var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p, main ul'))
   var source = window.EDIT_SOURCE
   if (blocks.length !== source.length) return alert('Не удалось сопоставить текст с файлом, режим правки выключен.')
 
@@ -86,20 +86,33 @@
     var m = el.className.match(/\bspace-(\d+)/)
     return m ? m[1] : '150'
   }
-  function bullet(el) {
-    return el.classList.contains('bullet')
+  // A list is one block, a <ul> with an item per line; the file gets one <li> per line at the indentation it already has.
+  function content(el) {
+    if (el.tagName !== 'UL') return clean(el.innerHTML)
+    var gap = (source[blocks.indexOf(el)] || '').match(/^\s*/)[0]
+    return Array.prototype.map.call(el.children, function (li) { return '<li>' + clean(li.innerHTML) + '</li>' }).join(gap)
+  }
+  function itemAt(ul) {
+    var sel = getSelection()
+    if (!sel.rangeCount) return null
+    var node = sel.anchorNode
+    var li = (node.nodeType === 1 ? node : node.parentNode).closest('li')
+    return li && li.parentNode === ul ? li : null
   }
 
   function setup(el) {
     if (spacer(el)) el.tabIndex = 0
     else el.contentEditable = 'plaintext-only'
     el.spellcheck = true
-    el.savedHtml = clean(el.innerHTML)
+    el.savedHtml = content(el)
     el.savedBalance = el.classList.contains('balance')
   }
   blocks.forEach(function (el) {
     // An editable block shows the file's indentation as spaces and line breaks, which pushes a link row off its place.
     el.innerHTML = el.innerHTML.trim()
+    if (el.tagName === 'UL') {
+      Array.prototype.slice.call(el.childNodes).forEach(function (n) { if (n.nodeType === 3 && !n.nodeValue.trim()) n.remove() })
+    }
     markNbsp(el)
     setup(el)
   })
@@ -152,7 +165,7 @@
     timer = null
     var ops = []
     blocks.forEach(function (el, i) {
-      var html = clean(el.innerHTML), balance = el.classList.contains('balance')
+      var html = content(el), balance = el.classList.contains('balance')
       if (html === el.savedHtml && balance === el.savedBalance) return
       var after = indent(source[i], html)
       ops.push({ op: 'edit', index: i, before: source[i], after: after, balance: balance })
@@ -168,7 +181,7 @@
     return el.tagName === 'P' && !el.className.replace('balance', '').trim()
   }
 
-  // Enter: the text after the caret becomes a new paragraph below; in a list, a new item.
+  // Enter: the text after the caret becomes a new paragraph below.
   function split(el) {
     var sel = getSelection()
     if (!sel.rangeCount) return
@@ -181,8 +194,7 @@
     var holder = document.createElement('div')
     holder.appendChild(tail.extractContents())
     var first = clean(el.innerHTML).replace(/\s+$/, ''), second = clean(holder.innerHTML).replace(/^\s+/, '')
-    var next = document.createElement('p'), cls = bullet(el) ? 'bullet' : ''
-    next.className = cls
+    var next = document.createElement('p')
     el.innerHTML = first
     next.innerHTML = second
     markNbsp(el)
@@ -191,7 +203,7 @@
     setup(next)
     el.savedHtml = first
     var after = indent(source[i], first)
-    send([{ op: 'split', index: i, before: source[i], after: after, next: second, cls: cls }])
+    send([{ op: 'split', index: i, before: source[i], after: after, next: second }])
     source[i] = after
     source.splice(i + 1, 0, second)
     blocks.splice(i + 1, 0, next)
@@ -199,14 +211,14 @@
     caret(next, 0)
   }
 
-  // Backspace at the start of a paragraph joins it to the paragraph or list item above; an empty one is simply removed,
-  // and a spacer above goes instead.
+  // Backspace at the start of a paragraph joins it to the paragraph above; an empty one is simply removed, and a spacer above
+  // goes instead.
   function join(el) {
     var i = blocks.indexOf(el), prev = blocks[i - 1]
     if (!prev) return
     var empty = !el.textContent.trim()
     if (!empty && spacer(prev)) return removeBlock(prev, el)
-    if (!empty && !(plain(el) && (plain(prev) || bullet(prev)))) return
+    if (!empty && !(plain(el) && plain(prev))) return
     save()
     if (empty) {
       send([{ op: 'remove', index: i, before: source[i] }])
@@ -237,6 +249,52 @@
     prev.focus()
     getSelection().removeAllRanges()
     getSelection().addRange(spot)
+  }
+
+  // Enter in a list item: the text after the caret becomes the next item. Enter in an empty last item leaves the list for a new
+  // paragraph below it.
+  function newItem(ul) {
+    var li = itemAt(ul), sel = getSelection()
+    if (!li || !sel.rangeCount) return
+    if (!li.textContent.trim() && li === ul.lastElementChild && ul.children.length > 1) {
+      li.remove()
+      save()
+      var i = blocks.indexOf(ul), p = document.createElement('p')
+      ul.after(p)
+      setup(p)
+      send([{ op: 'split', index: i, before: source[i], after: source[i], next: '' }])
+      source.splice(i + 1, 0, '')
+      blocks.splice(i + 1, 0, p)
+      p.focus()
+      caret(p, 0)
+      return
+    }
+    var range = sel.getRangeAt(0)
+    range.deleteContents()
+    var tail = document.createRange()
+    tail.setStart(range.endContainer, range.endOffset)
+    tail.setEnd(li, li.childNodes.length)
+    var next = document.createElement('li')
+    next.appendChild(tail.extractContents())
+    li.after(next)
+    caret(next, 0)
+    ul.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  // Backspace at the start of an item joins it to the item above; in a list of one item, it turns the list into Body.
+  function joinItem(ul, li) {
+    var prev = li.previousElementSibling
+    if (!prev) {
+      if (ul.children.length === 1) retype(ul, 'p', '')
+      return
+    }
+    var spot = document.createRange()
+    spot.selectNodeContents(prev)
+    spot.collapse(false)
+    while (li.firstChild) prev.appendChild(li.firstChild)
+    li.remove()
+    getSelection().removeAllRanges()
+    getSelection().addRange(spot)
+    ul.dispatchEvent(new Event('input', { bubbles: true }))
   }
 
   // A block goes away; the caret goes to `then`, or to the end of the block above (below, for the first one).
@@ -352,7 +410,19 @@
     el.dispatchEvent(new Event('input', { bubbles: true }))
   })
 
-  document.addEventListener('input', function () {
+  // Clearing a whole list leaves its text straight in the <ul>; it goes back into an item.
+  function tidy(ul) {
+    if (Array.prototype.every.call(ul.childNodes, function (n) { return n.nodeName === 'LI' })) return
+    var offset = caretOffset(ul), li = null
+    Array.prototype.slice.call(ul.childNodes).forEach(function (n) {
+      if (n.nodeName === 'LI') return (li = null)
+      if (!li) ul.insertBefore(li = document.createElement('li'), n)
+      li.appendChild(n)
+    })
+    placeCaret(ul, offset)
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.tagName === 'UL') tidy(e.target)
     placeControls()
     pending = true
     clearTimeout(timer)
@@ -362,10 +432,10 @@
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
-  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta'], ['List', 'p', 'bullet']]
+  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta'], ['List', 'ul', '']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
-    var cls = ['meta', 'lead', 'bullet'].filter(function (c) { return el.classList.contains(c) })[0]
+    var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
   // Rows of links and breadcrumbs keep their markup; they can only move.
@@ -501,11 +571,18 @@
     getSelection().addRange(range)
   }
 
-  // A new style: the block becomes another tag or class, its text stays.
+  // A new style: the block becomes another tag or class, its text stays. Into a list or out of one, lines become items and
+  // items lines, and the page comes back from the file.
   function retype(el, tag, cls) {
     var i = blocks.indexOf(el)
     if (i < 0 || fixed(el) || styleOf(el) === tag + (cls ? '.' + cls : '')) return
     save()
+    if ((tag === 'ul') !== (el.tagName === 'UL')) {
+      var lines = el.tagName === 'UL'
+        ? Array.prototype.map.call(el.children, function (li) { return clean(li.innerHTML) })
+        : clean(el.innerHTML).split('<br>')
+      return structural({ op: 'retype', index: i, before: source[i], tag: tag, cls: cls, lines: lines }, { index: i })
+    }
     var offset = caretOffset(el)
     var next = document.createElement(tag)
     next.className = [cls, el.classList.contains('balance') && 'balance'].filter(Boolean).join(' ')
@@ -673,17 +750,19 @@
       if (el.classList.contains('list')) return
       if (e.shiftKey) {
         insert(document.createElement('br'))
-      } else if (bullet(el) && !el.textContent.trim()) {
-        retype(el, 'p', '')
+      } else if (el.tagName === 'UL') {
+        newItem(el)
       } else {
         split(el)
       }
     }
-    // At the start of a list item Backspace turns it into a plain paragraph first, as Enter in an empty item does.
-    if (el && e.key === 'Backspace' && atStart(el)) {
-      e.preventDefault()
-      if (bullet(el)) retype(el, 'p', '')
-      else join(el)
+    if (el && e.key === 'Backspace') {
+      var li = el.tagName === 'UL' && itemAt(el)
+      if (li ? atStart(li) : atStart(el)) {
+        e.preventDefault()
+        if (li) joinItem(el, li)
+        else join(el)
+      }
     }
     if (block && spacer(block) && (e.key === 'Backspace' || e.key === 'Delete')) {
       e.preventDefault()
