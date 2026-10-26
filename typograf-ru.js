@@ -43,6 +43,8 @@
       var result = tp.execute(text)
       // The first word of a sentence or of a clause after a comma never ends a line alone («…и лендинги. Собрал», «…и приложения, собираю»): it moves down with the next word.
       result = result.replace(/([.!?…,] \S+) (?=\S)/g, '$1' + NBSP)
+      // A name of Latin words with capitals (CSS Design Awards, Site Inspire, Claude Code) never breaks inside.
+      result = result.replace(/([A-Z][A-Za-z0-9-]*) (?=[A-Z])/g, '$1' + NBSP)
       if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
       if (result !== text) node.nodeValue = result
       keepHyphenated(node)

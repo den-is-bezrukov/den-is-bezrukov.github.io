@@ -1,11 +1,14 @@
-"""Serves the site at localhost; with ?edit in the address a page turns editable and writes text edits back into its file.
+"""Serves the site at localhost; with ?edit in the address a page turns editable and writes text edits back into its file,
+along with the balance class a block gets from the «Ровные строки» button.
 
-The editor script is injected only here, so the published page never carries it. Typograf lays the page out
-as on the site; the editor strips its non-breaking spaces and word spans before anything is saved.
+The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
+it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
+strips Typograf's non-breaking spaces and word spans before anything is saved.
 """
 import http.server
 import json
 import os
+import re
 import socketserver
 import sys
 import webbrowser
@@ -17,7 +20,7 @@ PORT = 8765
 
 
 class Blocks(HTMLParser):
-    """Offsets of the inner HTML of every h1, h2, h3 and p inside <main>, in document order."""
+    """Offsets of every h1, h2, h3 and p inside <main>, in document order: where its start tag begins, where its inner HTML begins and ends."""
 
     def __init__(self, source):
         super().__init__(convert_charrefs=False)
@@ -37,14 +40,29 @@ class Blocks(HTMLParser):
         if tag == 'main':
             self.in_main = True
         elif self.in_main and tag in EDITABLE and self.open is None:
-            self.open = (tag, self.position() + len(self.get_starttag_text()))
+            start = self.position()
+            self.open = (tag, start, start + len(self.get_starttag_text()))
 
     def handle_endtag(self, tag):
         if tag == 'main':
             self.in_main = False
         elif self.open and tag == self.open[0]:
-            self.spans.append((self.open[1], self.position()))
+            self.spans.append((self.open[1], self.open[2], self.position()))
             self.open = None
+
+
+def with_class(tag, name, on):
+    """The start tag with the class name added or removed."""
+    m = re.search(r'\sclass="([^"]*)"', tag)
+    names = m.group(1).split() if m else []
+    if on and name not in names:
+        names.append(name)
+    if not on and name in names:
+        names.remove(name)
+    attr = ' class="%s"' % ' '.join(names) if names else ''
+    if m:
+        return tag[:m.start()] + attr + tag[m.end():]
+    return tag[:-1] + attr + '>'
 
 
 def page_file(url):
@@ -86,10 +104,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path and 'edit' in query.split('&'):
             with open(path, encoding='utf-8') as f:
                 source = f.read()
-            blocks = [source[a:b] for a, b in Blocks(source).spans]
-            page = source.replace('</body>', '<script>window.EDIT_SOURCE = %s</script>\n'
-                                '<script src="/_edit/editor.js"></script>\n</body>'
-                                % json.dumps(blocks, ensure_ascii=False).replace('</', '<\\/'))
+            blocks = [source[a:b] for _, a, b in Blocks(source).spans]
+            editor = ('<script>window.EDIT_SOURCE = %s</script>\n<script src="/_edit/editor.js"></script>\n'
+                      % json.dumps(blocks, ensure_ascii=False).replace('</', '<\\/'))
+            typograf = re.search(r'<script src="[./]*typograf\.min\.js"></script>', source)
+            at = typograf.start() if typograf else source.index('</body>')
+            page = source[:at] + editor + source[at:]
             return self.send_body(page, 'text/html; charset=utf-8')
         super().do_GET()
 
@@ -102,10 +122,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             source = f.read()
         spans = Blocks(source).spans
         for edit in sorted(edits, key=lambda e: -e['index']):
-            start, end = spans[edit['index']]
+            tag, start, end = spans[edit['index']]
             if source[start:end] != edit['before']:
                 return self.send_error(409, 'The page changed on disk, reload it')
             source = source[:start] + edit['after'] + source[end:]
+            if 'balance' in edit:
+                source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
         with open(path, 'w', encoding='utf-8') as f:
             f.write(source)
         self.send_body('{}', 'application/json')

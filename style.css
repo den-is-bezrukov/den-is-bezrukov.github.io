@@ -36,6 +36,8 @@ h3 { margin-top: 3rem; }
 p { margin: 0 0 1.5rem; text-wrap: pretty; }
 /* The intro under the name: a size up from the text. */
 header h1 + p { font-size: 1.25rem; line-height: 1.5; }
+/* A block switched to «Ровные строки» in edit mode gets lines of nearly equal length. */
+.balance { text-wrap: balance; }
 strong { font-weight: 600; }
 a {
   color: inherit;
@@ -59,6 +61,10 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .about { margin-top: var(--gap-s); }
 article { margin-top: var(--gap); scroll-margin-top: var(--gap); }
 .inner header + article { margin-top: var(--gap-s); }
+/* A line break set by hand in edit mode holds while the column is full width; on a narrower screen the text flows past it. */
+@media (max-width: 743px) {
+  br.wide { display: none; }
+}
 @media (max-width: 480px) {
   :root { --gap: 6rem; --gap-s: 3rem; }
   main { padding: 4rem 1rem; }
