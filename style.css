@@ -29,7 +29,8 @@ main {
 /* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
 h1, h2, h3 { font-weight: 600; line-height: 1; }
 h1, .inner h2 { margin: 0 0 2rem; font-size: 3rem; }
-h2, h3 { margin: 0 0 1rem; font-size: 2rem; }
+/* Below a project or section title everything stands a text line apart: the grey line, paragraphs, credits. */
+h2, h3 { margin: 0 0 1.5rem; font-size: 2rem; }
 h3 { margin-top: 3rem; }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand a full line apart. */
 p { margin: 0 0 1.5rem; text-wrap: pretty; }
@@ -57,7 +58,6 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .list span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
 .about { margin-top: var(--gap-s); }
 article { margin-top: var(--gap); scroll-margin-top: var(--gap); }
-.meta { margin-bottom: 1.5rem; }
 .inner header + article { margin-top: var(--gap-s); }
 @media (max-width: 480px) {
   :root { --gap: 6rem; --gap-s: 3rem; }
