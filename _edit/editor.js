@@ -377,7 +377,8 @@
     save()
   })
   group([balanceButton])
-  group([button('?', function () { help.hidden = !help.hidden })])
+  var helpButton = button('?', function () { help.hidden = !help.hidden })
+  group([helpButton])
   group([button('↑', function (el) { move(el, -1) }), button('↓', function (el) { move(el, 1) })])
 
   var help = document.createElement('pre')
@@ -628,6 +629,10 @@
     }
   })
 
+  // The shortcuts close with a press anywhere outside them; ? itself toggles them.
+  document.addEventListener('pointerdown', function (e) {
+    if (!help.hidden && !help.contains(e.target) && !helpButton.contains(e.target)) help.hidden = true
+  })
   // Links stay links but don't take you away mid-edit; ⌘-click follows them. Another page of the site opens in edit mode too,
   // an anchor on this page just scrolls to its place.
   document.addEventListener('click', function (e) {
