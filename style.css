@@ -1,4 +1,13 @@
 /* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. */
+/* Inter 4.1, the variable font with every glyph, kept next to the page: weight 100–900 and the optical size axis, so big headings
+   get Inter Display's shapes by themselves. */
+@font-face {
+  font-family: Inter;
+  src: url("fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   /* Spacing scale: the name is the size in rem times 100 (space-150 = 1.5rem = 24px), so a step in between fits without renaming.
      Every margin and padding comes from it: 800 between projects, 300 between groups, 150 between paragraphs, 050 between list items. */
