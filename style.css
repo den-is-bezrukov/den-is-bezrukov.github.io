@@ -39,7 +39,8 @@ a {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 25%, transparent);
-  text-decoration-thickness: 2.5%;
+  /* One device pixel on a retina screen at any size; 2.5% of a big title came out twice as thick. */
+  text-decoration-thickness: 0.5px;
   text-underline-offset: 30%;
 }
 /* Link rows, breadcrumbs and a linked title read as navigation: no underline until hover. Links in the text keep it. */
