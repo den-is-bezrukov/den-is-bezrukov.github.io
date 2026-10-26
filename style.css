@@ -1,7 +1,7 @@
-/* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. Gaps: 8rem and 4rem between blocks (6 and 3rem on phones), a text line between paragraphs. */
+/* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. Gaps: 8rem and 3rem between blocks (6 and 3rem on phones), a text line between paragraphs. */
 :root {
   --gap: 8rem;
-  --gap-s: 4rem;
+  --gap-s: 3rem;
   --bg: #ffffff;
   --text: #1a1a1a;
   /* Two colours only: text at 90% black (90% white in the dark theme) and a grey, #808080 on white (3.95:1, held up by its weight of 500), the text colour at 65% in the dark theme. */
