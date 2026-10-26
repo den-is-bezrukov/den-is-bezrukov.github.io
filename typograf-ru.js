@@ -33,16 +33,20 @@
     frag.appendChild(document.createTextNode(text.slice(last)))
     node.parentNode.replaceChild(frag, node)
   }
-  var nodes = []
-  var walker = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT)
-  for (var n = walker.nextNode(); n; n = walker.nextNode()) if (n.nodeValue.trim()) nodes.push(n)
-  nodes.forEach(function (node) {
-    var text = node.nodeValue
-    var result = tp.execute(text)
-    // The first word of a sentence or of a clause after a comma never ends a line alone («…и лендинги. Собрал», «…и приложения, собираю»): it moves down with the next word.
-    result = result.replace(/([.!?…,] \S+) (?=\S)/g, '$1' + NBSP)
-    if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
-    if (result !== text) node.nodeValue = result
-    keepHyphenated(node)
-  })
+  // Lays out the text under root; edit mode calls it again for a block once it has been edited.
+  window.typografRu = function (root) {
+    var nodes = []
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    for (var n = walker.nextNode(); n; n = walker.nextNode()) if (n.nodeValue.trim()) nodes.push(n)
+    nodes.forEach(function (node) {
+      var text = node.nodeValue
+      var result = tp.execute(text)
+      // The first word of a sentence or of a clause after a comma never ends a line alone («…и лендинги. Собрал», «…и приложения, собираю»): it moves down with the next word.
+      result = result.replace(/([.!?…,] \S+) (?=\S)/g, '$1' + NBSP)
+      if (endsLine(node)) result = result.replace(/ (\S+\s*)$/, NBSP + '$1')
+      if (result !== text) node.nodeValue = result
+      keepHyphenated(node)
+    })
+  }
+  window.typografRu(document.querySelector('main'))
 })()

@@ -23,9 +23,10 @@
     saved[i] = el.innerHTML
   })
 
-  // The browser keeps typed spaces as &nbsp; and leaves a <br> in a cleared line; Typograf places the real nbsp itself.
+  // Typograf's non-breaking spaces and the spans that keep hyphenated words whole are only layout, so the file never gets them;
+  // the browser also keeps typed spaces as &nbsp; and leaves a <br> in a cleared line.
   function clean(html) {
-    return html.replace(/&nbsp;/g, ' ').replace(/<br>$/, '')
+    return html.replace(/<span class="nw">([^<]*)<\/span>/g, '$1').replace(/&nbsp;/g, ' ').replace(/<br>$/, '')
   }
 
   // The indentation trimmed on load goes back around the text, so the file keeps its layout.
@@ -45,7 +46,7 @@
     clearTimeout(timer)
     var edits = []
     blocks.forEach(function (el, i) {
-      if (el.innerHTML !== saved[i]) edits.push({ index: i, before: source[i], after: indent(source[i], clean(el.innerHTML)), html: el.innerHTML })
+      if (clean(el.innerHTML) !== clean(saved[i])) edits.push({ index: i, before: source[i], after: indent(source[i], clean(el.innerHTML)), html: el.innerHTML })
     })
     if (!edits.length) return
     fetch('/save?' + location.pathname, { method: 'POST', body: JSON.stringify(edits) }).then(function (r) {
@@ -66,7 +67,13 @@
     clearTimeout(timer)
     timer = setTimeout(save, 700)
   })
-  document.addEventListener('focusout', save)
+  // Leaving a block saves it and lays it out again with the site's line rules.
+  document.addEventListener('focusout', function (e) {
+    save()
+    if (Array.prototype.indexOf.call(blocks, e.target) < 0 || !window.typografRu) return
+    e.target.innerHTML = clean(e.target.innerHTML)
+    window.typografRu(e.target)
+  })
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.isContentEditable) e.preventDefault()
     if (e.key === 's' && (e.metaKey || e.ctrlKey)) {

@@ -1,12 +1,11 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes text edits back into its file.
 
-The editor script is injected only here, so the published page never carries it. Typograf is left out
-while editing, so its non-breaking spaces never land in the file.
+The editor script is injected only here, so the published page never carries it. Typograf lays the page out
+as on the site; the editor strips its non-breaking spaces and word spans before anything is saved.
 """
 import http.server
 import json
 import os
-import re
 import socketserver
 import sys
 import webbrowser
@@ -88,8 +87,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             with open(path, encoding='utf-8') as f:
                 source = f.read()
             blocks = [source[a:b] for a, b in Blocks(source).spans]
-            page = re.sub(r'<script src="[./]*typograf\.min\.js"></script>\n?', '', source)
-            page = page.replace('</body>', '<script>window.EDIT_SOURCE = %s</script>\n'
+            page = source.replace('</body>', '<script>window.EDIT_SOURCE = %s</script>\n'
                                 '<script src="/_edit/editor.js"></script>\n</body>'
                                 % json.dumps(blocks, ensure_ascii=False).replace('</', '<\\/'))
             return self.send_body(page, 'text/html; charset=utf-8')
