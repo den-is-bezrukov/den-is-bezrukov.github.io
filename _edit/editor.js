@@ -15,13 +15,13 @@
     '.edit-status.on { opacity: 1; }' +
     '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    // Every button is at least a 40px square, so a single character sits in the middle of its square; words get 8px either
-    // side; the buttons touch, so the pointer goes straight from one to the next.
+    // Every button is 40px tall and at least 32px wide, so a single character sits in the middle of its button; words get 8px
+    // either side; the buttons touch, so the pointer goes straight from one to the next.
     // The current one is set at 600; a hidden copy of the label at 600 keeps each button as wide either way.
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 8px; cursor: pointer; }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 32px; height: 40px; padding: 0 8px; cursor: pointer; }' +
     '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
