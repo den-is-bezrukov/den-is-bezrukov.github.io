@@ -16,6 +16,8 @@
 
   var saved = []
   blocks.forEach(function (el, i) {
+    // An editable block shows the file's indentation as spaces and line breaks, which pushes a link row off its place.
+    el.innerHTML = el.innerHTML.trim()
     el.contentEditable = 'plaintext-only'
     el.spellcheck = true
     saved[i] = el.innerHTML
@@ -24,6 +26,11 @@
   // The browser keeps typed spaces as &nbsp; and leaves a <br> in a cleared line; Typograf places the real nbsp itself.
   function clean(html) {
     return html.replace(/&nbsp;/g, ' ').replace(/<br>$/, '')
+  }
+
+  // The indentation trimmed on load goes back around the text, so the file keeps its layout.
+  function indent(before, html) {
+    return before.match(/^\s*/)[0] + html + before.match(/\s*$/)[0]
   }
 
   var timer, pending = false
@@ -38,7 +45,7 @@
     clearTimeout(timer)
     var edits = []
     blocks.forEach(function (el, i) {
-      if (el.innerHTML !== saved[i]) edits.push({ index: i, before: source[i], after: clean(el.innerHTML), html: el.innerHTML })
+      if (el.innerHTML !== saved[i]) edits.push({ index: i, before: source[i], after: indent(source[i], clean(el.innerHTML)), html: el.innerHTML })
     })
     if (!edits.length) return
     fetch('/save?' + location.pathname, { method: 'POST', body: JSON.stringify(edits) }).then(function (r) {
