@@ -1,4 +1,4 @@
-/* Base 16px, sizes in rem. Type: headings 3 / 1.5rem, text and grey service lines 1rem, the grey at 500. Gaps: 8rem and 4rem between blocks, a text line between paragraphs. */
+/* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem, the grey at 500. Gaps: 8rem and 4rem between blocks (6 and 3rem on phones), a text line between paragraphs. */
 :root {
   --gap: 8rem;
   --gap-s: 4rem;
@@ -23,25 +23,17 @@ body {
 main {
   max-width: 680px;
   margin: 0 auto;
-  padding: var(--gap) 24px 6rem;
+  padding: var(--gap) 2rem;
 }
-/* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Bold in the text has the same weight. Inter's optical size axis tightens the big ones by itself. */
-h1, h2, h3 { font-weight: 600; }
-h1 {
-  margin: 0 0 2rem;
-  font-size: 3rem;
-  line-height: 1.1;
-}
-h2, h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1.5rem;
-  line-height: 1.3;
-}
+/* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
+h1, h2, h3 { font-weight: 600; line-height: 1; }
+h1, .inner h2 { margin: 0 0 2rem; font-size: 3rem; }
+h2, h3 { margin: 0 0 1rem; font-size: 2rem; }
 h3 { margin-top: 3rem; }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand a full line apart. */
 p { margin: 0 0 1.5rem; text-wrap: pretty; }
-/* The intro under the name: a size up from the text, lines of about 65 characters at most. */
-header h1 + p { max-width: 36em; font-size: 1.25rem; line-height: 1.4; }
+/* The intro under the name: a size up from the text. */
+header h1 + p { font-size: 1.25rem; line-height: 1.4; }
 strong { font-weight: 600; }
 a {
   color: inherit;
@@ -57,20 +49,17 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .nw { white-space: nowrap; }
 /* Grey service lines are a step heavier than the text, so the lighter colour holds its own next to it. */
 .contacts, .meta, .credits, .crumbs { color: var(--muted); font-weight: 500; }
-.contacts { margin-top: 1rem; }
 /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
 .list { line-height: 1.75; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list span { white-space: nowrap; }
 .list span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
 .about { margin-top: var(--gap-s); }
 article { margin-top: var(--gap); scroll-margin-top: var(--gap); }
-.meta { margin-bottom: 1rem; }
-.credits { margin-top: 1rem; }
+.meta { margin-bottom: 1.5rem; }
 .inner header + article { margin-top: var(--gap-s); }
-.inner h2 { margin-bottom: 1.25rem; font-size: 3rem; line-height: 1.1; }
 @media (max-width: 480px) {
-  :root { --gap: 5.25rem; --gap-s: 3.5rem; }
-  main { padding: 3.75rem 16px 4rem; }
-  h1, .inner h2 { font-size: 2.125rem; }
-  .contacts, .meta, .credits, .crumbs { font-size: 0.875rem; }
+  :root { --gap: 6rem; --gap-s: 3rem; }
+  main { padding: 4rem 1rem; }
+  h1, .inner h2 { font-size: 2rem; }
+  h2, h3 { font-size: 1.5rem; }
 }
