@@ -4,13 +4,14 @@
   --gap-s: 4rem;
   --bg: #ffffff;
   --text: #1a1a1a;
-  /* Two colours only: text at 90% black (90% white in the dark theme) and the grey as the text colour at 65%, which keeps it above 4.5:1. */
-  --muted: color-mix(in srgb, var(--text) 65%, transparent);
+  /* Two colours only: text at 90% black (90% white in the dark theme) and a grey, #808080 on white (3.95:1, held up by its weight of 500), the text colour at 65% in the dark theme. */
+  --muted: #808080;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #000000;
     --text: #e6e6e6;
+    --muted: color-mix(in srgb, var(--text) 65%, transparent);
   }
 }
 body {
