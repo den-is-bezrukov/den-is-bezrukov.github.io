@@ -1,4 +1,4 @@
-/* Base 16px, sizes in rem. Type: headings 3 / 2rem set solid (2 / 1.5rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. */
+/* Base 16px, sizes in rem. Type: headings H1 / H2 / H3 at 3 / 2 / 1.5rem set solid (2 / 1.5 / 1.25rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. */
 /* Inter 4.1, the variable font with every glyph, kept next to the page: weight 100–900 and the optical size axis, so big headings
    get Inter Display's shapes by themselves. */
 @font-face {
@@ -43,12 +43,12 @@ main {
   margin: 0 auto;
   padding: var(--space-800) var(--space-200);
 }
-/* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
+/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
 h1, h2, h3 { font-weight: 600; line-height: 1; }
-h1, .inner h2 { margin: 0 0 var(--space-200); font-size: 3rem; }
+h1 { margin: 0 0 var(--space-200); font-size: 3rem; }
 /* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
 h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
-h3 { margin-top: var(--space-300); }
+h3 { margin-top: var(--space-300); font-size: 1.5rem; }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand space-150 apart, the same step as everything below a title. */
 p { margin: 0 0 var(--space-150); text-wrap: pretty; }
 /* The intro under the name: a size up from the text. */
@@ -89,6 +89,7 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
 @media (max-width: 480px) {
   main { padding: var(--space-400) var(--space-100); }
   article { margin-top: var(--space-600); scroll-margin-top: var(--space-600); }
-  h1, .inner h2 { font-size: 2rem; }
-  h2, h3 { font-size: 1.5rem; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
 }
