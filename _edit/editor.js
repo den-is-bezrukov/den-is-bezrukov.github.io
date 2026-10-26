@@ -310,7 +310,7 @@
   })
 
   // «Ровные строки» evens out the lines of the block with the caret: the block gets the balance class, on the site too.
-  // The button sits just below that block, clear of its highlight, and follows it as the block grows.
+  // The button sits above that block, 8px off its highlight, right edge on the highlight's right edge, and follows the block as it grows.
   var current = null
   var toggle = document.createElement('button')
   toggle.className = 'edit-balance'
@@ -325,9 +325,9 @@
   })
   function placeToggle() {
     if (!current) return
-    var rect = current.getBoundingClientRect()
-    toggle.style.left = rect.left + scrollX + 'px'
-    toggle.style.top = rect.bottom + scrollY + 12 + 'px'
+    var rect = current.getBoundingClientRect(), size = toggle.getBoundingClientRect(), ring = 6 // the 6px highlight around a block being edited
+    toggle.style.left = rect.right + ring + scrollX - size.width + 'px'
+    toggle.style.top = rect.top - ring + scrollY - 8 - size.height + 'px'
   }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return
