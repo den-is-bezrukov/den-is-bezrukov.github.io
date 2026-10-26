@@ -15,12 +15,16 @@
     '.edit-status.on { opacity: 1; }' +
     '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100vw - 16px); color: var(--muted); }' +
-    '.edit-tools.shown, .edit-tools span { display: flex; }' +
-    '.edit-tools span { gap: 12px; }' +
+    // Every button is at least a 40px square with 16px either side of its label, so a single character sits in the middle of
+    // its square and words keep the same 16px; the buttons touch, so the pointer goes straight from one to the next.
+    // The current one is set at 500; a hidden copy of the label at 500 keeps each button as wide either way.
+    '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; color: var(--muted); }' +
+    '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; cursor: pointer; }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 16px; cursor: pointer; }' +
+    '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 500; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
+    '.edit-tools button.on { font-weight: 500; }' +
     '.edit-help { position: fixed; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); margin: 0; white-space: pre-wrap; line-height: 1.8; }' +
     '.edit-help[hidden] { display: none; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
@@ -351,6 +355,7 @@
   function button(label, action) {
     var b = document.createElement('button')
     b.textContent = label
+    b.dataset.label = label
     // Pressing a button, with a mouse or a finger, leaves the caret in the block.
     b.addEventListener('pointerdown', function (e) { e.preventDefault() })
     b.addEventListener('mousedown', function (e) { e.preventDefault() })
