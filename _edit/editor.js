@@ -1,6 +1,6 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
-// Enter starts a new paragraph (a new item in a list), Backspace at the start of one joins it to the paragraph above; Shift+Enter
-// sets a line break, ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
+// Enter breaks the line (in a list it starts the next item), ⌘Enter adds a paragraph below the block, Backspace at the start of
+// a paragraph joins it to the one above; ⌥Space sets a non-breaking space, ⌘K or pasting an address over selected words a link.
 // A toolbar above the block with the caret adds a section or a project (§), switches the block's style and its line layout
 // (Pretty, Balance) and moves it (↓ ↑); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
@@ -66,7 +66,7 @@
       .replace(/<span class="nb" contenteditable="false">&nbsp;<\/span>/g, '\u0000')
       .replace(/&nbsp;/g, ' ')
       .replace(/\u0000/g, '&nbsp;')
-      .replace(/<br>$/, '')
+      .replace(/(<br>)+$/, '')
   }
 
   // The indentation trimmed on load goes back around the text, so the file keeps its layout.
@@ -168,34 +168,28 @@
     return el.tagName === 'P' && !el.className.replace('balance', '').trim()
   }
 
-  // Enter: the text after the caret becomes a new paragraph below.
-  function split(el) {
-    var sel = getSelection()
-    if (!sel.rangeCount) return
+  // ⌘Enter: a new empty paragraph below the block, wherever the caret is; the block itself stays whole.
+  function addParagraph(el) {
+    var i = blocks.indexOf(el)
     save()
-    var i = blocks.indexOf(el), range = sel.getRangeAt(0)
-    range.deleteContents()
-    var tail = document.createRange()
-    tail.setStart(range.endContainer, range.endOffset)
-    tail.setEnd(el, el.childNodes.length)
-    var holder = document.createElement('div')
-    holder.appendChild(tail.extractContents())
-    var first = clean(el.innerHTML).replace(/\s+$/, ''), second = clean(holder.innerHTML).replace(/^\s+/, '')
-    var next = document.createElement('p')
-    el.innerHTML = first
-    next.innerHTML = second
-    markNbsp(el)
-    markNbsp(next)
-    el.after(next)
-    setup(next)
-    el.savedHtml = first
-    var after = indent(source[i], first)
-    send([{ op: 'split', index: i, before: source[i], after: after, next: second }])
-    source[i] = after
-    source.splice(i + 1, 0, second)
-    blocks.splice(i + 1, 0, next)
-    next.focus()
-    caret(next, 0)
+    var p = document.createElement('p')
+    el.after(p)
+    setup(p)
+    send([{ op: 'split', index: i, before: source[i], after: source[i], next: '' }])
+    source.splice(i + 1, 0, '')
+    blocks.splice(i + 1, 0, p)
+    p.focus()
+    caret(p, 0)
+  }
+
+  // Enter and Shift+Enter: a line break. One at the very end shows no new line until something follows it, so a second one
+  // holds the line open; trailing line breaks never reach the file.
+  function lineBreak() {
+    var br = document.createElement('br')
+    insert(br)
+    var next = br.nextSibling
+    while (next && next.nodeType === 3 && !next.nodeValue) next = next.nextSibling
+    if (!next) br.after(document.createElement('br'))
   }
 
   // Backspace at the start of a paragraph joins it to the paragraph above; an empty one is simply removed.
@@ -243,16 +237,7 @@
     if (!li || !sel.rangeCount) return
     if (!li.textContent.trim() && li === ul.lastElementChild && ul.children.length > 1) {
       li.remove()
-      save()
-      var i = blocks.indexOf(ul), p = document.createElement('p')
-      ul.after(p)
-      setup(p)
-      send([{ op: 'split', index: i, before: source[i], after: source[i], next: '' }])
-      source.splice(i + 1, 0, '')
-      blocks.splice(i + 1, 0, p)
-      p.focus()
-      caret(p, 0)
-      return
+      return addParagraph(ul)
     }
     var range = sel.getRangeAt(0)
     range.deleteContents()
@@ -672,14 +657,10 @@
     var el = block && block.isContentEditable ? block : null
     if (el && e.key === 'Enter') {
       e.preventDefault()
-      if (el.classList.contains('list')) return
-      if (e.shiftKey) {
-        insert(document.createElement('br'))
-      } else if (el.tagName === 'UL') {
-        newItem(el)
-      } else {
-        split(el)
-      }
+      if (e.metaKey || e.ctrlKey) addParagraph(el)
+      else if (fixed(el)) return
+      else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
+      else lineBreak()
     }
     if (el && e.key === 'Backspace') {
       var li = el.tagName === 'UL' && itemAt(el)
