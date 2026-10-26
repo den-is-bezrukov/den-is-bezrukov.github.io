@@ -42,8 +42,10 @@ h3 {
   font-size: 1.125rem;
   line-height: 1.4;
 }
-p { margin: 0 0 0.75rem; }
-header p { text-wrap: balance; }
+/* Text fills its lines; only a too-short last line pulls a few words down. */
+p { margin: 0 0 0.75rem; text-wrap: pretty; }
+/* The intro under the name: lines of about 65 characters, a little shorter than the column. */
+header h1 + p { max-width: 36em; }
 strong { font-weight: 600; }
 a {
   color: inherit;
