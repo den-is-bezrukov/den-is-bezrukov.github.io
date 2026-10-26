@@ -1,42 +1,50 @@
+/* Base 16px, sizes in rem. Type: 3 / 1.5 / 1.125 / 1rem. Gaps: 8rem and 4rem between blocks, 0.75–1.25rem inside them. */
 :root {
+  --gap: 8rem;
+  --gap-s: 4rem;
   --bg: #ffffff;
-  --text: #1a1a1a;
-  --muted: #696969;
+  --text: #000000;
+  /* Two colours only: the grey is the text colour at 60%. */
+  --muted: color-mix(in srgb, var(--text) 60%, transparent);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #191919;
-    --text: #ececec;
-    --muted: #9b9b9b;
+    --bg: #000000;
+    --text: #ffffff;
   }
 }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.5 Inter, system-ui, -apple-system, sans-serif;
+  font: 1rem/1.5 Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 main {
   max-width: 680px;
   margin: 0 auto;
-  padding: 108px 24px 96px;
+  padding: var(--gap) 24px 6rem;
 }
+/* Three heading steps: name and project page title, project, section of a full case. Inter's optical size axis tightens the big ones by itself. */
+h1, h2, h3 { font-weight: 500; }
 h1 {
-  margin: 0 0 20px;
-  font-size: 48px;
+  margin: 0 0 1.25rem;
+  font-size: 3rem;
   line-height: 1.1;
-  font-weight: 600;
-  letter-spacing: -0.02em;
 }
 h2 {
-  margin: 0 0 12px;
-  font-size: 24px;
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
   line-height: 1.3;
-  font-weight: 600;
-  letter-spacing: -0.01em;
 }
-p { margin: 0 0 12px; }
+h3 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+p { margin: 0 0 0.75rem; }
+header p { text-wrap: balance; }
+strong { font-weight: 600; }
 a {
   color: inherit;
   text-decoration: underline;
@@ -46,34 +54,21 @@ a {
 }
 a:hover { text-decoration-color: currentColor; }
 .nw { white-space: nowrap; }
-.contacts, .meta, .credits { color: var(--muted); font-size: 16px; }
-.contacts { margin-top: 16px; }
+.contacts, .meta, .credits, .crumbs { color: var(--muted); }
+.contacts { margin-top: 1rem; }
 /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
 .list { line-height: 1.75; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list span { white-space: nowrap; }
 .list span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
-.about { margin-top: 72px; }
-article { margin-top: 108px; }
-.meta { margin-bottom: 16px; }
-.credits { margin-top: 16px; }
-strong { font-weight: 600; }
-h3 {
-  margin: 32px 0 8px;
-  font-size: 18px;
-  line-height: 1.4;
-  font-weight: 600;
-}
-/* Inner pages: the breadcrumbs sit in the top gap, close to the first title, so it stands where the home page's name does. */
-.inner { padding-top: 64px; }
-.crumbs { color: var(--muted); margin-bottom: 20px; }
-.inner header + article { margin-top: 0; }
-.inner h2 { margin-bottom: 20px; font-size: 48px; line-height: 1.1; letter-spacing: -0.02em; }
+.about { margin-top: var(--gap-s); }
+article { margin-top: var(--gap); scroll-margin-top: var(--gap); }
+.meta { margin-bottom: 1rem; }
+.credits { margin-top: 1rem; }
+.inner header + article { margin-top: var(--gap-s); }
+.inner h2 { margin-bottom: 1.25rem; font-size: 3rem; line-height: 1.1; }
 @media (max-width: 480px) {
-  main { padding: 60px 16px 64px; }
-  .inner { padding-top: 16px; }
-  .inner h2 { font-size: 34px; }
-  h1 { font-size: 34px; }
-  .contacts, .meta, .credits { font-size: 14px; }
-  .about { margin-top: 56px; }
-  article { margin-top: 84px; }
+  :root { --gap: 5.25rem; --gap-s: 3.5rem; }
+  main { padding: 3.75rem 16px 4rem; }
+  h1, .inner h2 { font-size: 2.125rem; }
+  .contacts, .meta, .credits, .crumbs { font-size: 0.875rem; }
 }
