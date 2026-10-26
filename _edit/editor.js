@@ -15,13 +15,13 @@
     '.edit-status.on { opacity: 1; }' +
     '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    // Every button is 40px tall with 12px either side of its label, so a single character stays under 40px wide and the gap
-    // between any two labels is the same 24px; the buttons touch, so the pointer goes straight from one to the next.
+    // Every button is at least a 40px square, so a single character sits in the middle of its square; words get 12px either
+    // side; the buttons touch, so the pointer goes straight from one to the next.
     // The current one is set at 500; a hidden copy of the label at 500 keeps each button as wide either way.
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 40px; padding: 0 12px; cursor: pointer; }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 12px; cursor: pointer; }' +
     '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 500; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 500; }' +
