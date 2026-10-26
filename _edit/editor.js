@@ -1,6 +1,6 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
-// Enter breaks the line (in a list it starts the next item), ⌘Enter adds a paragraph below the block, Backspace at the start of
-// a paragraph joins it to the one above; ⌥Space sets a non-breaking space, ⌘K or pasting an address over selected words a link.
+// Enter breaks the line (in a list it starts the next item), ⌘Enter adds a paragraph below the block, ⇧⌘Enter cuts the block
+// at the caret into a new paragraph, Backspace at the start of a paragraph joins it to the one above; ⌥Space sets a non-breaking space, ⌘K or pasting an address over selected words a link.
 // A toolbar above the block with the caret adds a section or a project (§), switches the block's style and its line layout
 // (Pretty, Balance) and moves it (↓ ↑); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
@@ -180,6 +180,36 @@
     blocks.splice(i + 1, 0, p)
     p.focus()
     caret(p, 0)
+  }
+
+  // ⇧⌘Enter: the text after the caret becomes a new paragraph below.
+  function split(el) {
+    var sel = getSelection()
+    if (!sel.rangeCount) return
+    save()
+    var i = blocks.indexOf(el), range = sel.getRangeAt(0)
+    range.deleteContents()
+    var tail = document.createRange()
+    tail.setStart(range.endContainer, range.endOffset)
+    tail.setEnd(el, el.childNodes.length)
+    var holder = document.createElement('div')
+    holder.appendChild(tail.extractContents())
+    var first = clean(el.innerHTML).replace(/\s+$/, ''), second = clean(holder.innerHTML).replace(/^\s+/, '')
+    var next = document.createElement('p')
+    el.innerHTML = first
+    next.innerHTML = second
+    markNbsp(el)
+    markNbsp(next)
+    el.after(next)
+    setup(next)
+    el.savedHtml = first
+    var after = indent(source[i], first)
+    send([{ op: 'split', index: i, before: source[i], after: after, next: second }])
+    source[i] = after
+    source.splice(i + 1, 0, second)
+    blocks.splice(i + 1, 0, next)
+    next.focus()
+    caret(next, 0)
   }
 
   // Enter and Shift+Enter: a line break. One at the very end shows no new line until something follows it, so a second one
@@ -661,7 +691,9 @@
     var el = block && block.isContentEditable ? block : null
     if (el && e.key === 'Enter') {
       e.preventDefault()
-      if (e.metaKey || e.ctrlKey) addParagraph(el)
+      // A list or a row of links isn't cut: ⇧⌘Enter there adds a paragraph below, as ⌘Enter does.
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !fixed(el) && el.tagName !== 'UL') split(el)
+      else if (e.metaKey || e.ctrlKey) addParagraph(el)
       else if (fixed(el)) return
       else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
       else lineBreak()
