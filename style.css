@@ -8,6 +8,14 @@
   font-style: normal;
   font-display: swap;
 }
+/* EB Garamond, the variable font from Google Fonts' repository, for the headings. */
+@font-face {
+  font-family: "EB Garamond";
+  src: url("fonts/EBGaramond.ttf") format("truetype");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   /* Spacing scale: the name is the size in rem times 100 (space-150 = 1.5rem = 24px), so a step in between fits without renaming.
      Every margin and padding comes from it: 800 between projects, 300 between groups, 150 between paragraphs, 050 between list items. */
@@ -45,8 +53,8 @@ main {
   margin: 0 auto;
   padding: var(--space-800) var(--space-200);
 }
-/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
-h1, h2, h3 { font-weight: 600; line-height: 1; }
+/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid in EB Garamond at 500; bold in the text stays Inter at 600. */
+h1, h2, h3 { font-family: "EB Garamond", serif; font-weight: 500; line-height: 1; }
 h1 { margin: 0 0 var(--space-200); font-size: 3rem; }
 /* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
 h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
