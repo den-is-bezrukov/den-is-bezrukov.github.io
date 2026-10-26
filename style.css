@@ -28,7 +28,7 @@ main {
 /* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Bold in the text has the same weight. Inter's optical size axis tightens the big ones by itself. */
 h1, h2, h3 { font-weight: 600; }
 h1 {
-  margin: 0 0 1.25rem;
+  margin: 0 0 2rem;
   font-size: 3rem;
   line-height: 1.1;
 }
@@ -40,8 +40,8 @@ h2, h3 {
 h3 { margin-top: 3rem; }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand a full line apart. */
 p { margin: 0 0 1.5rem; text-wrap: pretty; }
-/* The intro under the name: lines of about 65 characters, a little shorter than the column. */
-header h1 + p { max-width: 36em; }
+/* The intro under the name: a size up from the text, lines of about 65 characters at most. */
+header h1 + p { max-width: 36em; font-size: 1.25rem; line-height: 1.4; }
 strong { font-weight: 600; }
 a {
   color: inherit;
