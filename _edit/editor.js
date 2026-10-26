@@ -466,8 +466,9 @@
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
-  // § adds a part of the page: a project on the home page, a section in a case.
-  group([button('§', home ? askAnchor : addSection)])
+  // § adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
+  // is out for now.
+  if (!home) group([button('§', addSection)])
   // List works as a switch: pressed on a list, it turns the list back into Body.
   var styleGroup = group(styles.map(function (s) {
     var b = button(s[0], function (el) {
