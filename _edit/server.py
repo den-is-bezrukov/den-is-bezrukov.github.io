@@ -1,5 +1,6 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
-a block's text, the balance class it gets from the «Ровные строки» button, a paragraph split in two, joined or removed.
+a block's text and style, the balance class from «Ровные строки», paragraphs split, joined, removed or moved,
+a new section or project. Every write keeps the version it replaces, so ⌘Z can step back through them.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
 it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
@@ -12,6 +13,7 @@ import re
 import socketserver
 import sys
 import threading
+import time
 import webbrowser
 from html.parser import HTMLParser
 
@@ -19,10 +21,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITABLE = ('h1', 'h2', 'h3', 'p')
 PORT = 8765
 LOCK = threading.Lock()
+# Earlier versions of every page, also kept as files in _edit/history (not in git), the last 200 per page.
+HISTORY = os.path.join(ROOT, '_edit', 'history')
+KEEP = 200
+undone, redone, written = {}, {}, {}
+
+PROJECT = '''<article id="{id}">
+{i}  <h2>Новый проект</h2>
+{i}  <p class="meta">Клиент · роль · год</p>
+{i}  <p>Что это за проект и что я в нём сделал.</p>
+{i}  <p class="credits">Роль: Денис Безруков</p>
+{i}</article>'''
 
 
 class Blocks(HTMLParser):
-    """Every h1, h2, h3 and p inside <main>, in document order: its tag name, where its start tag begins, where its inner HTML begins and ends."""
+    """Every h1, h2, h3 and p inside <main> in document order, as (tag name, where its start tag begins, where its inner HTML
+    begins and ends), and every <article> as (id, where it begins, where it ends)."""
 
     def __init__(self, source):
         super().__init__(convert_charrefs=False)
@@ -31,7 +45,9 @@ class Blocks(HTMLParser):
             self.lines.append(self.lines[-1] + len(line))
         self.in_main = False
         self.open = None
+        self.article = None
         self.spans = []
+        self.articles = []
         self.feed(source)
 
     def position(self):
@@ -41,6 +57,8 @@ class Blocks(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'main':
             self.in_main = True
+        elif self.in_main and tag == 'article':
+            self.article = (dict(attrs).get('id'), self.position())
         elif self.in_main and tag in EDITABLE and self.open is None:
             start = self.position()
             self.open = (tag, start, start + len(self.get_starttag_text()))
@@ -48,9 +66,16 @@ class Blocks(HTMLParser):
     def handle_endtag(self, tag):
         if tag == 'main':
             self.in_main = False
+        elif tag == 'article' and self.article:
+            self.articles.append(self.article + (self.position() + len('</article>'),))
+            self.article = None
         elif self.open and tag == self.open[0]:
             self.spans.append(self.open + (self.position(),))
             self.open = None
+
+
+class Refused(Exception):
+    pass
 
 
 def with_class(tag, name, on):
@@ -65,6 +90,122 @@ def with_class(tag, name, on):
     if m:
         return tag[:m.start()] + attr + tag[m.end():]
     return tag[:-1] + attr + '>'
+
+
+def retag(tag, old, new, cls):
+    """A start tag turned into another style: a new tag name and class, other attributes and the balance class kept."""
+    m = re.search(r'\sclass="([^"]*)"', tag)
+    names = ([cls] if cls else []) + [c for c in (m.group(1).split() if m else []) if c == 'balance']
+    attrs = re.sub(r'\sclass="[^"]*"', '', tag[1 + len(old):-1])
+    return '<%s%s%s>' % (new, attrs, ' class="%s"' % ' '.join(names) if names else '')
+
+
+def line_start(source, pos):
+    """Where the line holding pos begins (its newline) and its indentation, when pos is the first thing on it."""
+    line = source.rfind('\n', 0, pos)
+    indent = source[line + 1:pos]
+    return (line, indent) if not indent.strip() else (pos, '')
+
+
+def project_row(source):
+    """Where the project list under the summary begins and ends."""
+    m = re.search(r'<section class="about">.*?(<p class="contacts list">.*?</p>)', source, re.S)
+    if not m:
+        raise Refused('no project list')
+    return m.start(1), m.end(1)
+
+
+def entry(row, id):
+    return re.search(r'<span><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
+
+
+def apply(source, edit, spans, articles):
+    op = edit.get('op', 'edit')
+    if op == 'addProject':
+        id = edit['id']
+        if not re.fullmatch(r'[a-z0-9-]+', id) or 'id="%s"' % id in source:
+            raise Refused('bad anchor')
+        after = next((a for a in articles if a[0] == edit.get('after')), articles[-1] if articles else None)
+        if not after:
+            raise Refused('no projects')
+        _, indent = line_start(source, after[1])
+        source = source[:after[2]] + '\n\n' + indent + PROJECT.format(id=id, i=indent) + source[after[2]:]
+        start, end = project_row(source)
+        row = source[start:end]
+        m = entry(row, edit.get('after') or '')
+        new = '<wbr><span><a href="#%s">Новый проект</a></span>' % id
+        row = row[:m.end()] + new + row[m.end():] if m else re.sub(r'(\s*</p>)$', new + r'\1', row)
+        return source[:start] + row + source[end:]
+    if op == 'moveProject':
+        k = next(n for n, a in enumerate(articles) if a[0] == edit['id'])
+        j = k + edit['dir']
+        if not 0 <= j < len(articles):
+            return source
+        (_, a1, a2), (_, b1, b2) = sorted([articles[k], articles[j]], key=lambda a: a[1])
+        source = source[:a1] + source[b1:b2] + source[a2:b1] + source[a1:a2] + source[b2:]
+        try:
+            start, end = project_row(source)
+        except Refused:
+            return source
+        row = source[start:end]
+        x, y = entry(row, articles[k][0]), entry(row, articles[j][0])
+        if x and y:
+            (x1, x2), (y1, y2) = sorted([x.span(), y.span()])
+            row = row[:x1] + row[y1:y2] + row[x2:y1] + row[x1:x2] + row[y2:]
+        return source[:start] + row + source[end:]
+
+    name, tag, start, end = spans[edit['index']]
+    if source[start:end] != edit['before']:
+        raise Refused('changed')
+    close = end + len('</%s>' % name)
+    cut, indent = line_start(source, tag)
+    if op == 'edit':
+        source = source[:start] + edit['after'] + source[end:]
+        if 'balance' in edit:
+            source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
+    elif op == 'split':
+        source = source[:start] + edit['after'] + source[end:close] + '\n%s<p>%s</p>' % (indent, edit['next']) + source[close:]
+    elif op == 'insert':
+        source = source[:close] + ''.join('\n' + indent + html for html in edit['blocks']) + source[close:]
+    elif op == 'remove':
+        source = source[:cut] + source[close:]
+    elif op == 'merge':
+        _, _, prev_start, prev_end = spans[edit['index'] - 1]
+        if source[prev_start:prev_end] != edit['prevBefore']:
+            raise Refused('changed')
+        source = source[:cut] + source[close:]
+        source = source[:prev_start] + edit['after'] + source[prev_end:]
+    elif op == 'retype':
+        new = edit['tag']
+        if new not in EDITABLE:
+            raise Refused('bad tag')
+        source = source[:end] + '</%s>' % new + source[close:]
+        source = source[:tag] + retag(source[tag:start], name, new, edit.get('cls')) + source[start:]
+    elif op == 'move':
+        other = spans[edit['index'] + edit['dir']]
+        if source[other[2]:other[3]] != edit['otherBefore']:
+            raise Refused('changed')
+        (a1, a2), (b1, b2) = sorted([(tag, close), (other[1], other[3] + len('</%s>' % other[0]))])
+        if source[a2:b1].strip():
+            raise Refused('not neighbours')
+        source = source[:a1] + source[b1:b2] + source[a2:b1] + source[a1:a2] + source[b2:]
+    return source
+
+
+def snapshot(path, source):
+    folder = os.path.join(HISTORY, os.path.relpath(path, ROOT).replace(os.sep, '__'))
+    os.makedirs(folder, exist_ok=True)
+    stamp = time.strftime('%Y%m%d-%H%M%S') + '-%03d' % (time.time() * 1000 % 1000)
+    with open(os.path.join(folder, stamp + '.html'), 'w', encoding='utf-8') as f:
+        f.write(source)
+    for old in sorted(os.listdir(folder))[:-KEEP]:
+        os.remove(os.path.join(folder, old))
+
+
+def write(path, source):
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(source)
+    written[path] = source
 
 
 def page_file(url):
@@ -116,43 +257,40 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        path = self.path.startswith('/save?') and page_file(self.path[len('/save?'):])
+        action, _, url = self.path.partition('?')
+        path = action in ('/save', '/undo', '/redo') and page_file(url)
         if not path:
             return self.send_error(404)
-        edits = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        # One save at a time: each one checks the file against what the editor expects it to hold.
+        body = self.rfile.read(int(self.headers.get('Content-Length') or 0))
+        # One request at a time: each save checks the file against what the editor expects it to hold.
         with LOCK:
             with open(path, encoding='utf-8') as f:
                 source = f.read()
-            spans = Blocks(source).spans
-            for edit in sorted(edits, key=lambda e: -e['index']):
-                name, tag, start, end = spans[edit['index']]
-                if source[start:end] != edit['before']:
+            if action == '/save':
+                edits = json.loads(body)
+                blocks = Blocks(source)
+                result = source
+                try:
+                    for edit in sorted(edits, key=lambda e: -e.get('index', 0)):
+                        result = apply(result, edit, blocks.spans, blocks.articles)
+                except (Refused, KeyError, IndexError, StopIteration):
                     return self.send_error(409, 'The page changed on disk, reload it')
-                close = end + len('</%s>' % name)
-                line = source.rfind('\n', 0, tag)
-                indent = source[line + 1:tag]
-                # A removed block takes its own line with it.
-                cut = line if not indent.strip() else tag
-                op = edit.get('op', 'edit')
-                if op == 'edit':
-                    source = source[:start] + edit['after'] + source[end:]
-                    if 'balance' in edit:
-                        source = source[:tag] + with_class(source[tag:start], 'balance', edit['balance']) + source[start:]
-                elif op == 'split':
-                    new = '\n%s<p>%s</p>' % (indent if not indent.strip() else '', edit['next'])
-                    source = source[:start] + edit['after'] + source[end:close] + new + source[close:]
-                elif op == 'remove':
-                    source = source[:cut] + source[close:]
-                elif op == 'merge':
-                    _, _, prev_start, prev_end = spans[edit['index'] - 1]
-                    if source[prev_start:prev_end] != edit['prevBefore']:
-                        return self.send_error(409, 'The page changed on disk, reload it')
-                    source = source[:cut] + source[close:]
-                    source = source[:prev_start] + edit['after'] + source[prev_end:]
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(source)
-        self.send_body('{}', 'application/json')
+                if result != source:
+                    snapshot(path, source)
+                    undone.setdefault(path, []).append(source)
+                    redone[path] = []
+                    write(path, result)
+                return self.send_body('{"ok": true}', 'application/json')
+            # Undo and redo only step through the editor's own writes; a file changed from outside stops them.
+            back, forth = (undone, redone) if action == '/undo' else (redone, undone)
+            if not back.get(path):
+                return self.send_body('{"ok": false}', 'application/json')
+            if written.get(path) != source:
+                return self.send_error(409, 'The page changed outside the editor')
+            forth.setdefault(path, []).append(source)
+            snapshot(path, source)
+            write(path, back[path].pop())
+        self.send_body('{"ok": true}', 'application/json')
 
 
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
