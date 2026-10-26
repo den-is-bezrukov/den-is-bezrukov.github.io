@@ -1,6 +1,6 @@
 """Serves the site at localhost; with ?edit in the address a page turns editable and writes edits back into its file:
 a block's text and style, the balance class from Pretty/Balance, paragraphs split, joined, removed or moved,
-a new section or project. Every write keeps the version it replaces, so ⌘Z can step back through them.
+a new section or project, a project's anchor taken off. Every write keeps the version it replaces, so ⌘Z can step back through them.
 
 The editor script is injected only here, so the published page never carries it, and it goes in before Typograf:
 it marks the file's own non-breaking spaces first, then Typograf lays the page out as on the site, and the editor
@@ -136,6 +136,41 @@ def apply(source, edit, spans, articles):
         new = '<wbr><span><a href="#%s">Новый проект</a></span>' % id
         row = row[:m.end()] + new + row[m.end():] if m else re.sub(r'(</span>\s*</p>)$', new + r'\1', row)
         return source[:start] + row + source[end:]
+    if op == 'removeAnchor':
+        # The anchor comes off: the project's line in the project list goes, its text stays without the anchor, and only
+        # a project with no blocks left goes as well.
+        id = edit['id']
+        _, a1, a2 = next(a for a in articles if a[0] == id)
+        if re.search(r'<(h1|h2|h3|p|ul)\b', source[a1:a2]):
+            tag_end = source.index('>', a1) + 1
+            source = source[:a1] + re.sub(r'\sid="[^"]*"', '', source[a1:tag_end], 1) + source[tag_end:]
+        else:
+            cut = a1
+            while cut and source[cut - 1] in ' \t\n':
+                cut -= 1
+            source = source[:cut] + source[a2:]
+        try:
+            start, end = project_row(source)
+        except Refused:
+            return source
+        row = source[start:end]
+        m = entry(row, id)
+        if m:
+            s1, s2 = m.span()
+            if row[:s1].endswith('<wbr>'):
+                s1 -= len('<wbr>')
+            elif row[s2:].startswith('<wbr>'):
+                s2 += len('<wbr>')
+            row = row[:s1] + row[s2:]
+        return source[:start] + row + source[end:]
+    if op == 'fillProject':
+        # A project with no blocks left gets the template back under its anchor.
+        id = edit['id']
+        _, a1, a2 = next(a for a in articles if a[0] == id)
+        if re.search(r'<(h1|h2|h3|p|ul)\b', source[a1:a2]):
+            raise Refused('not empty')
+        _, indent = line_start(source, a1)
+        return source[:a1] + PROJECT.format(id=id, i=indent) + source[a2:]
     if op == 'moveProject':
         k = next(n for n, a in enumerate(articles) if a[0] == edit['id'])
         j = k + edit['dir']

@@ -13,8 +13,16 @@
     '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    '.edit-link, .edit-tools { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
+    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
+    // The project anchors under the anchor field: one per line, the anchor in the text colour where it holds what is typed,
+    // the project's title after it in grey, × at the end.
+    '.edit-anchors { position: fixed; display: flex; flex-direction: column; width: 320px; max-width: calc(100vw - 32px); max-height: 50vh; overflow: auto; padding: 8px 0; color: var(--muted); }' +
+    '.edit-anchors[hidden] { display: none; }' +
+    '.edit-anchors div { display: flex; }' +
+    '.edit-anchors button { all: unset; box-sizing: border-box; padding: 4px 12px; cursor: pointer; font-weight: 500; }' +
+    '.edit-anchors button:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+    '.edit-anchors button:hover, .edit-anchors .on { color: var(--text); }' +
     // Every button is 40px tall with 8px either side of its label, so any two labels are 16px apart; each group gets 8px more
     // at its ends, 16px from the toolbar's edge or the 6% line between groups; the buttons touch, so the pointer goes straight
     // from one to the next. Labels are set at 500, the current style at 600; a hidden copy of the label at 600 keeps each
@@ -621,12 +629,65 @@
     linkField.style.left = rect.left - 6 + 'px'
     linkField.style.top = rect.top - 6 - 8 - linkField.getBoundingClientRect().height + 'px'
     linkField.focus()
+    listAnchors()
+  }
+
+  // The anchors already on the page, under the field. A press on one goes to its project; a project with no blocks left gets
+  // the template back, so it can be typed into again. × takes the anchor off: the project's line in the project list goes,
+  // its text stays, and only a project with no blocks left goes with it.
+  var anchors = document.createElement('div')
+  anchors.className = 'edit-anchors'
+  anchors.hidden = true
+  document.body.appendChild(anchors)
+  // Pressing in the list leaves the field open and focused.
+  anchors.addEventListener('pointerdown', function (e) { e.preventDefault() })
+  anchors.addEventListener('mousedown', function (e) { e.preventDefault() })
+  function listAnchors() {
+    var typed = linkField.value.trim()
+    anchors.textContent = ''
+    Array.prototype.forEach.call(document.querySelectorAll('main article[id]'), function (article) {
+      var id = article.id, title = article.querySelector('h2'), row = document.createElement('div')
+      var name = document.createElement('button'), off = document.createElement('button')
+      name.textContent = '#' + id
+      if (title) {
+        var grey = document.createElement('span')
+        grey.style.color = 'var(--muted)'
+        grey.textContent = '  ' + title.textContent.trim()
+        name.appendChild(grey)
+      }
+      name.classList.toggle('on', !!typed && id.indexOf(typed) >= 0)
+      off.textContent = '×'
+      name.addEventListener('click', function () { goToProject(id) })
+      off.addEventListener('click', function () { removeAnchor(id) })
+      row.appendChild(name)
+      row.appendChild(off)
+      anchors.appendChild(row)
+    })
+    var field = linkField.getBoundingClientRect()
+    anchors.hidden = !anchors.children.length
+    anchors.style.left = field.left + 'px'
+    anchors.style.top = field.bottom + 8 + 'px'
+  }
+  linkField.addEventListener('input', function () { if (asking && asking.kind === 'anchor') listAnchors() })
+  function goToProject(id) {
+    var first = document.querySelector('#' + id + ' h1, #' + id + ' h2, #' + id + ' h3, #' + id + ' p, #' + id + ' ul')
+    closeAnchor(false)
+    if (!first) return structural({ op: 'fillProject', id: id }, { selector: '#' + id + ' h2', select: true })
+    first.scrollIntoView({ block: 'center' })
+    first.focus()
+    placeCaret(first, null)
+  }
+  function removeAnchor(id) {
+    var at = asking && blocks.indexOf(asking.block)
+    closeAnchor(false)
+    structural({ op: 'removeAnchor', id: id }, { index: at })
   }
   function closeAnchor(apply) {
     var l = asking, id = linkField.value.trim()
     if (apply && (!/^[a-z0-9-]+$/.test(id) || document.getElementById(id))) return show('Такой якорь не подойдёт')
     asking = null
     linkField.hidden = true
+    anchors.hidden = true
     linkField.placeholder = 'https://'
     l.block.focus()
     if (!apply) return
