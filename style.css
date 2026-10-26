@@ -42,7 +42,7 @@ h3 { margin-top: var(--space-300); }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand space-150 apart, the same step as everything below a title. */
 p { margin: 0 0 var(--space-150); text-wrap: pretty; }
 /* The intro under the name: a size up from the text. */
-header h1 + p { font-size: 1.25rem; line-height: 1.5; }
+p.lead { font-size: 1.25rem; line-height: 1.5; }
 /* A block switched to «Ровные строки» in edit mode gets lines of nearly equal length. */
 .balance { text-wrap: balance; }
 strong { font-weight: 600; }

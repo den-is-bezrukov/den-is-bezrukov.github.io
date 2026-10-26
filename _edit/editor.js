@@ -327,10 +327,10 @@
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
   // the block as it grows; plain text, what is on (the current style, Balance) in the text colour.
   var current = null
-  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
+  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
-    var cls = el.classList.contains('meta') ? 'meta' : ''
+    var cls = el.classList.contains('meta') ? 'meta' : el.classList.contains('lead') ? 'lead' : ''
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
   // Rows of links and breadcrumbs keep their markup; they can only move.
