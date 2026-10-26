@@ -1,8 +1,8 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
 // Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
 // ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link.
-// A toolbar above the block with the caret switches its style, adds a section or a project, moves the block, evens out
-// its lines (≈) and opens the shortcuts (?); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
+// A toolbar above the block with the caret switches its style, adds a section or a project (§), evens out its lines (Balance),
+// opens the shortcuts (?) and moves the block (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
   var source = window.EDIT_SOURCE
@@ -13,9 +13,7 @@
     '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    // ▲ ▼ ≈ are in Inter but not in the parts of it Google serves, so they come from the Inter installed on this Mac.
-    '@font-face { font-family: "Inter Local"; src: local("Inter"), local("Inter Regular"), local("Inter-Regular"); }' +
-    '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, "Inter Local", system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
+    '.edit-link, .edit-tools, .edit-help { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; gap: 4px 20px; max-width: calc(100vw - 16px); color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; }' +
@@ -323,7 +321,7 @@
   })
 
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
-  // the block as it grows; plain text, what is on (the current style, even lines) in the text colour.
+  // the block as it grows; plain text, what is on (the current style, Balance) in the text colour.
   var current = null
   var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
@@ -364,10 +362,10 @@
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }))
-  group([home ? button('+ Проект', askAnchor) : button('+ Раздел', addSection)])
-  group([button('▲', function (el) { move(el, -1) }), button('▼', function (el) { move(el, 1) })])
-  // ≈ evens out the block's lines: it gets the balance class, on the site too.
-  var balanceButton = button('≈', function (el) {
+  // § adds a part of the page: a project on the home page, a section in a case.
+  group([button('§', home ? askAnchor : addSection)])
+  // Balance evens out the block's lines: it gets the balance class, on the site too.
+  var balanceButton = button('Balance', function (el) {
     el.classList.toggle('balance')
     render()
     placeControls()
@@ -375,6 +373,7 @@
   })
   group([balanceButton])
   group([button('?', function () { help.hidden = !help.hidden })])
+  group([button('↑', function (el) { move(el, -1) }), button('↓', function (el) { move(el, 1) })])
 
   var help = document.createElement('pre')
   help.className = 'edit-help'
@@ -485,7 +484,7 @@
     placeControls()
   }
 
-  // «+ Раздел» puts a section heading and a paragraph after the block, the heading's text selected to type over.
+  // § in a case puts a section heading and a paragraph after the block, the heading's text selected to type over.
   function addSection(el) {
     var i = blocks.indexOf(el)
     save()
@@ -505,7 +504,7 @@
     placeControls()
   }
 
-  // «+ Проект» asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
+  // § on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
   function askAnchor(el) {
     asking = { kind: 'anchor', block: el }
     var rect = el.getBoundingClientRect()
