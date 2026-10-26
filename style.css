@@ -3,14 +3,14 @@
   --gap: 8rem;
   --gap-s: 4rem;
   --bg: #ffffff;
-  --text: #1d1d1f;
-  /* Two colours only: near-black text, as Apple sets it, and the grey as the text colour at 65%, which keeps it above 4.5:1. */
+  --text: #1a1a1a;
+  /* Two colours only: text at 90% black (90% white in the dark theme) and the grey as the text colour at 65%, which keeps it above 4.5:1. */
   --muted: color-mix(in srgb, var(--text) 65%, transparent);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #000000;
-    --text: #f5f5f7;
+    --text: #e6e6e6;
   }
 }
 body {
