@@ -11,10 +11,11 @@
     '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    '.edit-balance { display: none; position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; border: 0; border-radius: 999px; font: 500 13px/1 Inter, system-ui, sans-serif; color: var(--muted); background: color-mix(in srgb, currentColor 8%, transparent); cursor: pointer; }' +
+    '.edit-link, .edit-balance { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 15%, transparent), 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent); outline: none; }' +
+    '.edit-link { position: fixed; width: 320px; }' +
+    '.edit-balance { display: none; position: absolute; color: var(--muted); cursor: pointer; }' +
     '.edit-balance.shown { display: block; }' +
-    '.edit-balance.on { color: var(--text); background: color-mix(in srgb, var(--text) 12%, transparent); }' +
-    '.edit-link { position: fixed; z-index: 1; box-sizing: border-box; width: 320px; padding: 8px 12px; border: 0; border-radius: 8px; font: 13px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 15%, transparent), 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent); outline: none; }' +
+    '.edit-balance.on { color: var(--text); background: color-mix(in srgb, var(--text) 8%, var(--bg)); }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -256,6 +257,7 @@
     var range = sel.getRangeAt(0), link = linkAt(range, el)
     if (!link && range.collapsed) return
     linking = { block: el, range: range.cloneRange(), link: link }
+    toggle.classList.remove('shown')
     var rect = (link || range).getBoundingClientRect()
     linkField.style.left = Math.max(16, Math.min(rect.left, innerWidth - 336)) + 'px'
     linkField.style.top = rect.bottom + 8 + 'px'
@@ -301,12 +303,14 @@
   })
 
   document.addEventListener('input', function () {
+    placeToggle()
     pending = true
     clearTimeout(timer)
     timer = setTimeout(save, 700)
   })
 
   // «Ровные строки» evens out the lines of the block with the caret: the block gets the balance class, on the site too.
+  // The button sits just below that block, clear of its highlight, and follows it as the block grows.
   var current = null
   var toggle = document.createElement('button')
   toggle.className = 'edit-balance'
@@ -316,13 +320,21 @@
   toggle.addEventListener('click', function () {
     if (!current) return
     toggle.classList.toggle('on', current.classList.toggle('balance'))
+    placeToggle()
     save()
   })
+  function placeToggle() {
+    if (!current) return
+    var rect = current.getBoundingClientRect()
+    toggle.style.left = rect.left + scrollX + 'px'
+    toggle.style.top = rect.bottom + scrollY + 12 + 'px'
+  }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return
     current = e.target
     toggle.classList.add('shown')
     toggle.classList.toggle('on', current.classList.contains('balance'))
+    placeToggle()
   })
 
   // Leaving a block saves it and lays it out again with the site's line rules; an empty paragraph left behind goes away.
