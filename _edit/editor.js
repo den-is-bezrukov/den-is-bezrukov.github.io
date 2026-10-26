@@ -21,9 +21,7 @@
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0 8px; color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; position: relative; height: 40px; padding: 0 8px; cursor: pointer; }' +
-    // Under the pointer a button gets a soft ground, 4px short of the toolbar's top and bottom.
-    '@media (hover: hover) { .edit-tools button:hover::before { content: ""; position: absolute; inset: 4px 0; z-index: -1; border-radius: 6px; background: color-mix(in srgb, var(--text) 6%, transparent); } }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 40px; padding: 0 8px; cursor: pointer; }' +
     '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
