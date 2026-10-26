@@ -36,7 +36,7 @@ main {
 /* Two heading steps on a page: the name or project page title, then projects or the sections of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself. */
 h1, h2, h3 { font-weight: 600; line-height: 1; }
 h1, .inner h2 { margin: 0 0 var(--space-200); font-size: 3rem; }
-/* Below a project or section title everything stands a text line apart: the grey line, paragraphs, credits. */
+/* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
 h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
 h3 { margin-top: var(--space-300); }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand space-150 apart, the same step as everything below a title. */
@@ -59,8 +59,8 @@ a {
 /* On hover the underline darkens to 50% of the link colour, still lighter than the letters. */
 a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
 .nw { white-space: nowrap; }
-/* Grey service lines are a step heavier than the text, so the lighter colour holds its own next to it. */
-.contacts, .meta, .credits, .crumbs { color: var(--muted); font-weight: 500; }
+/* Meta: every grey line (under a title, credits, contacts, the project list, breadcrumbs), a step heavier than the text, so the lighter colour holds its own next to it. */
+.meta { color: var(--muted); font-weight: 500; }
 /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one. */
 .list { line-height: 1.75; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list span { white-space: nowrap; }

@@ -30,7 +30,7 @@ PROJECT = '''<article id="{id}">
 {i}  <h2>Новый проект</h2>
 {i}  <p class="meta">Клиент · роль · год</p>
 {i}  <p>Что это за проект и что я в нём сделал.</p>
-{i}  <p class="credits">Роль: Денис Безруков</p>
+{i}  <p class="meta">Роль: Денис Безруков</p>
 {i}</article>'''
 
 
@@ -109,7 +109,7 @@ def line_start(source, pos):
 
 def project_row(source):
     """Where the project list under the summary begins and ends."""
-    m = re.search(r'<section class="about">.*?(<p class="contacts list">.*?</p>)', source, re.S)
+    m = re.search(r'<section class="about">.*?(<p class="meta list">.*?</p>)', source, re.S)
     if not m:
         raise Refused('no project list')
     return m.start(1), m.end(1)

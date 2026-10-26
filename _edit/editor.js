@@ -2,7 +2,7 @@
 // Enter starts a new paragraph, Backspace at the start of one joins it to the paragraph above; Shift+Enter sets a line break,
 // ⌥Space a non-breaking space, ⌘K or pasting an address over selected words a link; «Ровные строки» evens out a block's lines.
 // A toolbar above the block with the caret switches its style, moves it, adds a section or a project, steps back through
-// saves and opens the shortcuts; ⌥⌘1/2/3/0/8/9, ⌘⇧↑/↓ and ⌘Z/⇧⌘Z do the same from the keyboard.
+// saves and opens the shortcuts; ⌥⌘1/2/3/0/8, ⌘⇧↑/↓ and ⌘Z/⇧⌘Z do the same from the keyboard.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p'))
   var source = window.EDIT_SOURCE
@@ -339,10 +339,10 @@
   })
 
   // The toolbar sits above the block on the left, as «Ровные строки» does on the right: plain text, the current style in the text colour.
-  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Body', 'p', ''], ['Meta', 'p', 'meta'], ['Credits', 'p', 'credits']]
-  var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta', Digit9: 'p.credits' }
+  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Body', 'p', ''], ['Meta', 'p', 'meta']]
+  var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
-    var cls = el.classList.contains('meta') ? 'meta' : el.classList.contains('credits') ? 'credits' : ''
+    var cls = el.classList.contains('meta') ? 'meta' : ''
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
   // Rows of links and breadcrumbs keep their markup; they can only move.
@@ -391,7 +391,7 @@
     '⌥Пробел — неразрывный пробел',
     '⌘K или ⌘V с адресом поверх слов — ссылка',
     '⌥⌘1, ⌥⌘2, ⌥⌘3 — H1, H2, H3',
-    '⌥⌘0 — Body, ⌥⌘8 — Meta, ⌥⌘9 — Credits',
+    '⌥⌘0 — Body, ⌥⌘8 — Meta',
     '⌘⇧↑, ⌘⇧↓ — переставить блок, в названии проекта — весь проект',
     '⌘Z, ⇧⌘Z — отменить, вернуть',
     '⌘S — сохранить сразу'
