@@ -236,8 +236,9 @@
     if (ops.length) send(ops)
   }
 
-  // A line of the project list follows its project's title as long as it reads the same: a title changed changes the
-  // lines that matched it; a line typed otherwise keeps its words, and ↩ brings it back to the title.
+  // A link to a project (a line of the project list, or a link in the text) follows the project's title as long as it
+  // reads the same: a title changed changes the links that matched it; a link typed otherwise keeps its words, and ↩
+  // brings it back to the title.
   function plainText(text) {
     return text.replace(/[\u00a0\u200b·]/g, function (c) { return c === '\u00a0' ? ' ' : '' }).replace(/\s+/g, ' ').trim()
   }
@@ -249,10 +250,13 @@
     var t = titleNode((link.getAttribute('href') || '').split('#')[1])
     return t ? plainText(t.textContent) : null
   }
+  // The link to a project the caret is in, in the project list or anywhere in the text (not a title that is a link).
   function itemLink(el) {
-    if (!el.classList.contains('list') || !el.closest('.about')) return null
-    var item = rowItem(el)
-    return item && item.querySelector('a[href*="#"]')
+    var sel = getSelection()
+    if (!sel.rangeCount || !el.contains(sel.anchorNode)) return null
+    var node = sel.anchorNode, item = el.classList.contains('list') && rowItem(el)
+    var a = item ? item.querySelector('a[href*="#"]') : (node.nodeType === 1 ? node : node.parentNode).closest('a[href*="#"]')
+    return a && el.contains(a) && !/^H[12]$/.test(el.tagName) && titleOf(a) !== null ? a : null
   }
   function followTitles() {
     Array.prototype.forEach.call(document.querySelectorAll('main article[id]'), function (article) {
@@ -262,8 +266,8 @@
       holder.innerHTML = t.savedHtml
       var was = plainText(holder.textContent), now = plainText(t.textContent)
       if (was === now) return
-      Array.prototype.forEach.call(document.querySelectorAll('.about .list a[href$="#' + article.id + '"]'), function (a) {
-        if (plainText(a.textContent) === was) a.textContent = now
+      Array.prototype.forEach.call(document.querySelectorAll('main a[href$="#' + article.id + '"]'), function (a) {
+        if (!t.contains(a) && plainText(a.textContent) === was) a.textContent = now
       })
     })
   }
@@ -747,14 +751,23 @@
   }))
   // ↩ brings a space back to the page's usual gap for its place, shown only while it is set otherwise.
   var resetGroup = group([button('↩', function (el) { resize(el, usualGap(el)) })])
-  // ↩ on a line of the project list set apart from its project's title brings it back to the title.
+  // ↩ on a link to a project set apart from the project's title, or written with another address, brings it back.
   var titleGroup = group([button('↩', function (el) {
     var link = itemLink(el)
     if (!link) return
     link.textContent = titleOf(link)
+    link.setAttribute('href', usualHref(link))
     el.dispatchEvent(new Event('input', { bubbles: true }))
     render()
   })])
+  // The address a link to a project should have: on the home page cases/#umo once the project has its full text in
+  // cases, #umo before that; on another page, the project's anchor there.
+  function usualHref(link) {
+    var id = (link.getAttribute('href') || '').split('#')[1], home = !document.querySelector('main.inner')
+    var full = known && known.some(function (k) { return k[0] === '/cases/#' + id })
+    return home && full ? 'cases/#' + id : '#' + id
+  }
+  loadKnown().then(function () { render() })
   function usualGap(el) {
     var i = blocks.indexOf(el), prev = blocks[i - 1], next = blocks[i + 1]
     // A space closing its group (the header) stands between groups.
@@ -779,7 +792,7 @@
     sizeGroup.hidden = !space
     resetGroup.hidden = !space || current.classList.contains('space-' + usualGap(current))
     var link = itemLink(current)
-    titleGroup.hidden = words || !link || titleOf(link) === null || plainText(link.textContent) === titleOf(link)
+    titleGroup.hidden = words || !link || plainText(link.textContent) === titleOf(link) && link.getAttribute('href') === usualHref(link)
     moveGroups[0].hidden = moveGroups[1].hidden = words || space
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
@@ -792,8 +805,8 @@
   document.addEventListener('selectionchange', function () {
     if (!current || !tools.classList.contains('shown')) return
     var words = selected()
-    // In the project list the caret going from line to line shows or hides ↩.
-    if (words === wasSelected && !words) return current.classList.contains('list') && render()
+    // The caret going into a link to a project, or out of it, shows or hides ↩.
+    if (words === wasSelected && !words) return render()
     wasSelected = words
     render()
     placeControls()
