@@ -58,8 +58,10 @@
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
-    '.edit-case > span { min-width: 1ch; outline: none; cursor: text; }' +
-    '.edit-case > span:focus { color: var(--text); }' +
+    '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
+    '.edit-case-name:focus-within [contenteditable] { color: var(--text); }' +
+    // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
+    '.edit-case-name:focus-within { background: #f0f0f0; box-shadow: -4px 0 0 #f0f0f0, 4px 0 0 #f0f0f0; border-radius: 4px; }' +
     // Over the anchor, 8px above it: + ↑ ↓ under the pointer, × while it is typed into.
     '.edit-case .edit-tools { left: 50%; top: calc(50% - 32px); transform: translate(-50%, -50%); text-transform: none; }' +
     '.edit-case:hover:not(:focus-within) .edit-tools.moves, .edit-case:focus-within .edit-tools.off { display: flex; }' +
@@ -720,6 +722,8 @@
   function mark() {
     var el = current
     if (!el || !tools.classList.contains('shown')) return
+    // A space shows its height in place of a mark.
+    if (isSpace(el)) return (markSvg.style.display = 'none')
     var lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.5
     // Lines: the words' boxes grouped by their middle, each line as tall as the line height around that middle. Only text
     // counts: the boxes of elements around it (the block row of a link list, its dots hidden at a line's start) would not.
@@ -902,7 +906,10 @@
     id.contentEditable = 'plaintext-only'
     id.spellcheck = false
     id.textContent = article.id
-    tag.append('#', id, caseTools('moves', [['+', function () {
+    var name = document.createElement('span')
+    name.className = 'edit-case-name'
+    name.append('#', id)
+    tag.append(name, caseTools('moves', [['+', function () {
       gone()
       structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
     }], ['↑', function () { moveCase(-1) }], ['↓', function () { moveCase(1) }]]), caseTools('off', [['×', function () {
@@ -1107,7 +1114,7 @@
     var f = back.focus
     // A new or moved project: its anchor, selected to type over.
     if (f && f.anchor !== undefined && cases[f.anchor]) {
-      var id = cases[f.anchor].tag.querySelector('span')
+      var id = cases[f.anchor].tag.querySelector('.edit-case-name [contenteditable]')
       id.focus()
       return selectAll(id)
     }
