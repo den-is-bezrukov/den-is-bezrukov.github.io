@@ -44,6 +44,10 @@
     '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 4px; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
+    // Between two blocks under the pointer: a line across the column, SPACE on it at the right.
+    '.edit-gap { position: absolute; z-index: 1; display: none; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }' +
+    '.edit-gap.shown { display: block; }' +
+    '.edit-gap .edit-tools { right: 0; bottom: 0; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -442,9 +446,9 @@
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
-  // Rows of links and breadcrumbs keep their markup; they can only move.
+  // Rows of links, breadcrumbs and spaces keep their markup; they can only move.
   function fixed(el) {
-    return el.classList.contains('list') || el.classList.contains('crumbs')
+    return el.classList.contains('list') || el.classList.contains('crumbs') || el.classList.contains('space')
   }
   // Every style is offered but H3, which only a page that already has section headings gets.
   var offered = {}
@@ -512,7 +516,8 @@
     var words = selected()
     linkGroup.hidden = !words
     styleGroup.hidden = listGroup.hidden = words || fixed(current)
-    wrapGroup.hidden = moveGroups[0].hidden = moveGroups[1].hidden = words
+    wrapGroup.hidden = words || current.classList.contains('space')
+    moveGroups[0].hidden = moveGroups[1].hidden = words
     sectionGroup.hidden = words || home
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
@@ -580,10 +585,11 @@
       if (line) { line.left = Math.min(line.left, r.left); line.right = Math.max(line.right, r.right) }
       else lines.push({ mid: mid, left: r.left, right: r.right })
     })
-    // An empty block shows a stub of one line where the caret stands.
+    // An empty block shows a stub of one line where the caret stands, a space the whole of itself.
     if (!lines.length) {
       var box = el.getBoundingClientRect()
-      lines.push({ mid: box.top + lh / 2, left: box.left, right: box.left + 8 })
+      if (el.classList.contains('space')) lh = box.height
+      lines.push({ mid: box.top + lh / 2, left: box.left, right: el.classList.contains('space') ? box.right : box.left + 8 })
     }
     lines.sort(function (a, b) { return a.mid - b.mid })
     var shapes = [], shape
@@ -723,6 +729,76 @@
     render()
     placeControls()
   }
+
+  // Spaces: the pointer in the gap between two blocks shows a line there with SPACE, which puts a space between them.
+  var main = document.querySelector('main')
+  var gap = document.createElement('div'), gapAt = -1
+  gap.className = 'edit-gap'
+  var gapTools = document.createElement('div')
+  gapTools.className = 'edit-tools shown'
+  var gapButton = document.createElement('button')
+  gapButton.textContent = 'space'
+  gapButton.addEventListener('pointerdown', function (e) { e.preventDefault() })
+  gapButton.addEventListener('mousedown', function (e) { e.preventDefault() })
+  gapButton.addEventListener('click', function () { if (gapAt >= 0) addSpace(gapAt) })
+  var gapGroup = document.createElement('span')
+  gapGroup.appendChild(gapButton)
+  gapTools.appendChild(gapGroup)
+  gap.appendChild(gapTools)
+  document.body.appendChild(gap)
+  function hideGap() {
+    gap.classList.remove('shown')
+    gapAt = -1
+  }
+  document.addEventListener('mousemove', function (e) {
+    if (gap.contains(e.target) || asking) return
+    var column = main.getBoundingClientRect(), pad = parseFloat(getComputedStyle(main).paddingLeft)
+    var left = column.left + pad, right = column.right - pad
+    for (var i = 0; i < blocks.length - 1; i++) {
+      var a = blocks[i].getBoundingClientRect(), b = blocks[i + 1].getBoundingClientRect()
+      if (e.clientY > a.bottom && e.clientY < b.top && e.clientX >= left && e.clientX <= right) {
+        gapAt = i
+        gap.style.left = left + scrollX + 'px'
+        gap.style.width = right - left + 'px'
+        gap.style.top = (a.bottom + b.top) / 2 + scrollY + 'px'
+        gap.classList.add('shown')
+        return
+      }
+    }
+    hideGap()
+  })
+  document.addEventListener('mouseleave', hideGap)
+  function addSpace(i) {
+    save()
+    var p = document.createElement('p')
+    p.className = 'space'
+    blocks[i].after(p)
+    setup(p)
+    send([{ op: 'insert', index: i, before: source[i], blocks: ['<p class="space"></p>'] }])
+    source.splice(i + 1, 0, '')
+    blocks.splice(i + 1, 0, p)
+    hideGap()
+  }
+  // A space takes no text; Backspace or Delete in it takes it away.
+  function removeSpace(el) {
+    var i = blocks.indexOf(el)
+    save()
+    send([{ op: 'remove', index: i, before: source[i] }])
+    source.splice(i, 1)
+    blocks.splice(i, 1)
+    current = null
+    hideControls()
+    el.remove()
+  }
+  document.addEventListener('beforeinput', function (e) {
+    if (e.target.classList && e.target.classList.contains('space')) e.preventDefault()
+  })
+  // An empty block has no line to put the caret on, so a click on a space focuses it by hand.
+  document.addEventListener('mousedown', function (e) {
+    if (!e.target.classList || !e.target.classList.contains('space')) return
+    e.preventDefault()
+    e.target.focus()
+  })
 
   // # on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
   function askAnchor(el) {
@@ -864,6 +940,10 @@
       else if (fixed(el)) return
       else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
       else lineBreak()
+    }
+    if (el && el.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault()
+      return removeSpace(el)
     }
     if (el && e.key === 'Backspace') {
       var li = el.tagName === 'UL' && itemAt(el)
