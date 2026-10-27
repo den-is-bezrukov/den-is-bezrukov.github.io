@@ -123,6 +123,10 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
   .space-400 { height: 2rem; }
   .space-500 { height: 2.5rem; }
   .space-600 { height: 3rem; }
+  /* On paper the project list under the summary and the link to this very PDF lead nowhere: they go. The projects
+     start a step further from the summary than from one another. */
+  .about .space, .about .list, .list .row > span:has(a[href$=".pdf"]) { display: none; }
+  .about + article { margin-top: var(--space-400); }
   p, ul, h1, h2, h3 { break-inside: avoid; }
   /* A title carries an unseen tail as tall as its grey line and a few lines of text: with less room than that left, the
      title goes over to the next page. */
