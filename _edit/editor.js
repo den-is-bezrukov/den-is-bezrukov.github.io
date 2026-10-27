@@ -16,6 +16,9 @@
     '@font-face { font-family: "Geist Mono"; src: url("/_edit/GeistMonoVariable.woff2") format("woff2"); font-weight: 100 900; }' +
     // The block being edited is marked by a light grey shape under its lines (drawn by mark()), not by a box around it.
     '[contenteditable]:focus { outline: none; }' +
+    // In a row of links the dots are real, though not editable, so the caret has a place on either side of each.
+    'main .list .row > span::before { content: none; }' +
+    '.edit-dot { display: inline-block; width: 0.9em; text-align: center; user-select: none; }' +
     // A link is selected like the words around it, not dragged away.
     'main a { -webkit-user-drag: none; user-drag: none; }' +
     '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #f0f0f0; }' +
@@ -105,6 +108,7 @@
   // the browser also keeps typed spaces as &nbsp; and leaves a <br> at the end of a cleared line. Hand-set ones stay as &nbsp;.
   function clean(html) {
     return html
+      .replace(/<span class="edit-dot" contenteditable="false">·<\/span>/g, '')
       .replace(/<span class="nw">([^<]*)<\/span>/g, '$1')
       .replace(/<span class="nb" contenteditable="false">&nbsp;<\/span>/g, '\u0000')
       .replace(/&nbsp;/g, ' ')
@@ -157,6 +161,7 @@
       Array.prototype.slice.call(el.childNodes).forEach(function (n) { if (n.nodeType === 3 && !n.nodeValue.trim()) n.remove() })
     }
     markNbsp(el)
+    markDots(el)
     setup(el)
   })
 
@@ -735,7 +740,7 @@
   function firstWord(range) {
     var walker = document.createTreeWalker(current, NodeFilter.SHOW_TEXT), part = document.createRange()
     for (var n = walker.nextNode(); n; n = walker.nextNode()) {
-      if (!range.intersectsNode(n)) continue
+      if (!range.intersectsNode(n) || n.parentNode.classList.contains('edit-dot')) continue
       part.selectNodeContents(n)
       if (n === range.startContainer) part.setStart(n, range.startOffset)
       if (n === range.endContainer) part.setEnd(n, range.endOffset)
@@ -1096,6 +1101,7 @@
     if (!window.typografRu) return
     el.innerHTML = clean(el.innerHTML)
     markNbsp(el)
+    markDots(el)
     window.typografRu(el)
   })
 
@@ -1154,8 +1160,30 @@
     }
   })
 
-  // A row of links is typed like text: a · typed in it cuts the item there into two (the dot itself is drawn by the
-  // stylesheet, between items, never at a line's start), and Backspace right after a dot joins the two items again.
+  // A row of links is typed like text: a · typed in it cuts the item there into two (the dot stands between items, never
+  // at a line's start), and Backspace right after a dot joins the two items again.
+  // In edit mode each item of a row starts with its dot as an element of its own, kept out of the file: the dot drawn by
+  // the stylesheet holds no caret, so the end of one item and the start of the next would be one and the same place.
+  function markDots(root) {
+    Array.prototype.forEach.call(root.querySelectorAll('.list .row > span'), function (item) {
+      if (!item.firstElementChild || !item.firstElementChild.classList.contains('edit-dot')) item.prepend(newDot())
+    })
+  }
+  function newDot() {
+    var dot = document.createElement('span')
+    dot.className = 'edit-dot'
+    dot.contentEditable = 'false'
+    dot.textContent = '·'
+    return dot
+  }
+  // A range from an item's start (just after its dot) to the caret.
+  function fromItemStart(item, node, offset) {
+    var range = document.createRange(), dot = item.firstElementChild
+    if (dot && dot.classList.contains('edit-dot')) range.setStartAfter(dot)
+    else range.setStart(item, 0)
+    range.setEnd(node, offset)
+    return range
+  }
   function rowItem(el) {
     var sel = getSelection()
     if (!el.classList.contains('list') || !sel.rangeCount) return null
@@ -1181,17 +1209,17 @@
     if (!el || e.metaKey || !getSelection().isCollapsed) return
     var hit = e.target.closest('.row > span')
     if (!hit || rowItem(el) === hit) return
-    var text = document.createTreeWalker(hit, NodeFilter.SHOW_TEXT).nextNode()
-    if (text) caret(text, 0)
+    var start = fromItemStart(hit, hit, hit.childNodes.length)
+    start.collapse(true)
+    getSelection().removeAllRanges()
+    getSelection().addRange(start)
   })
   // Letters typed at an item's very start or end go into its link, not beside it, as the browser would put them.
   function typeIntoLink(el, item, e) {
     var a = item.querySelector('a'), range = getSelection().getRangeAt(0)
     if (!a) return
     e.preventDefault()
-    var lead = document.createRange()
-    lead.setStart(item, 0)
-    lead.setEnd(range.startContainer, range.startOffset)
+    var lead = fromItemStart(item, range.startContainer, range.startOffset)
     var atStart = !lead.toString().replace(/\u200b/g, '')
     range.deleteContents()
     var spot = range.startContainer
@@ -1238,6 +1266,7 @@
       next.textContent = '\u200b'
       text = next.firstChild
     }
+    next.prepend(newDot())
     item.after(document.createElement(newLine ? 'br' : 'wbr'), next)
     // No space around the dot: the item before ends at its last letter, the next starts at its first.
     var last = item.lastChild
@@ -1248,10 +1277,8 @@
     el.dispatchEvent(new Event('input', { bubbles: true }))
   }
   function atItemStart(item) {
-    var sel = getSelection(), before = document.createRange()
-    before.setStart(item, 0)
-    before.setEnd(sel.anchorNode, sel.anchorOffset)
-    return !before.toString().replace(/\u200b/g, '')
+    var sel = getSelection()
+    return !fromItemStart(item, sel.anchorNode, sel.anchorOffset).toString().replace(/\u200b/g, '')
   }
   function joinItems(el) {
     var item = rowItem(el), sel = getSelection()
@@ -1270,6 +1297,8 @@
     var spot = document.createRange()
     spot.selectNodeContents(prev)
     spot.collapse(false)
+    var dot = item.firstElementChild
+    if (dot && dot.classList.contains('edit-dot')) dot.remove()
     while (item.firstChild) prev.appendChild(item.firstChild)
     item.remove()
     sel.removeAllRanges()
