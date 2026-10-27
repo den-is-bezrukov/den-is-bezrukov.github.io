@@ -50,6 +50,9 @@
     '.edit-gap.shown { display: block; }' +
     '.edit-gap .edit-tools { right: 0; top: 0.5px; transform: translateY(-50%); }' +
     'main .space:focus { outline: none; }' +
+    // Every space is marked at the column's right edge by a line across its middle, as long as the space is tall.
+    'main .space { position: relative; cursor: pointer; }' +
+    'main .space::after { content: ""; position: absolute; top: 0; right: 0; height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -196,16 +199,27 @@
     return el.tagName === 'P' && !el.className.replace('balance', '').trim()
   }
 
+  // The gaps between blocks are space blocks; a new paragraph comes with the usual one, 150, above it.
+  function isSpace(el) {
+    return !!el && el.classList.contains('space')
+  }
+  function newSpace(size) {
+    var div = document.createElement('div')
+    div.className = 'space space-' + size
+    setup(div)
+    return div
+  }
+
   // ⌘Enter: a new empty paragraph below the block, wherever the caret is; the block itself stays whole.
   function addParagraph(el) {
     var i = blocks.indexOf(el)
     save()
-    var p = document.createElement('p')
-    el.after(p)
+    var space = newSpace('150'), p = document.createElement('p')
+    el.after(space, p)
     setup(p)
-    send([{ op: 'split', index: i, before: source[i], after: source[i], next: '' }])
-    source.splice(i + 1, 0, '')
-    blocks.splice(i + 1, 0, p)
+    send([{ op: 'insert', index: i, before: source[i], blocks: ['<div class="space space-150"></div>', '<p></p>'] }])
+    source.splice(i + 1, 0, '', '')
+    blocks.splice(i + 1, 0, space, p)
     p.focus()
     caret(p, 0)
   }
@@ -228,14 +242,16 @@
     next.innerHTML = second
     markNbsp(el)
     markNbsp(next)
-    el.after(next)
+    var space = newSpace('150')
+    el.after(space, next)
     setup(next)
     el.savedHtml = first
     var after = indent(source[i], first)
-    send([{ op: 'split', index: i, before: source[i], after: after, next: second }])
+    send([{ op: 'edit', index: i, before: source[i], after: after }])
+    send([{ op: 'insert', index: i, before: after, blocks: ['<div class="space space-150"></div>', '<p>' + second + '</p>'] }])
     source[i] = after
-    source.splice(i + 1, 0, second)
-    blocks.splice(i + 1, 0, next)
+    source.splice(i + 1, 0, '', second)
+    blocks.splice(i + 1, 0, space, next)
     next.focus()
     caret(next, 0)
   }
@@ -250,21 +266,29 @@
     if (!next) br.after(document.createElement('br'))
   }
 
-  // Backspace at the start of a paragraph joins it to the paragraph above; an empty one is simply removed.
+  // Backspace at the start of a paragraph joins it to the paragraph above; an empty one is simply removed. The space
+  // between them goes too.
   function join(el) {
-    var i = blocks.indexOf(el), prev = blocks[i - 1]
+    var i = blocks.indexOf(el), gap = isSpace(blocks[i - 1]) ? 1 : 0, prev = blocks[i - 1 - gap]
     if (!prev) return
     var empty = !el.textContent.trim()
     if (!empty && !(plain(el) && plain(prev))) return
     save()
     if (empty) {
-      send([{ op: 'remove', index: i, before: source[i] }])
-      source.splice(i, 1)
-      blocks.splice(i, 1)
+      send([{ op: 'remove', index: i, before: source[i] }].concat(gap ? [{ op: 'remove', index: i - 1, before: '' }] : []))
+      source.splice(i - gap, 1 + gap)
+      if (gap) blocks[i - 1].remove()
+      blocks.splice(i - gap, 1 + gap)
       el.remove()
       prev.focus()
       caret(prev, prev.childNodes.length)
       return
+    }
+    if (gap) {
+      send([{ op: 'remove', index: i - 1, before: '' }])
+      source.splice(i - 1, 1)
+      blocks.splice(i - 1, 1)[0].remove()
+      i--
     }
     var a = clean(prev.innerHTML).replace(/\s+$/, ''), b = clean(el.innerHTML).replace(/^\s+/, '')
     prev.innerHTML = a + ' <span data-caret></span>' + b
@@ -447,7 +471,7 @@
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
   var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['list', 'ul', '']]
-  var SPACES = ['100', '200', '300', '400', '500', '600']
+  var SPACES = ['100', '150', '200', '300', '400', '500', '600']
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
@@ -708,15 +732,29 @@
       if (!neighbour || neighbour.tagName !== 'ARTICLE') return
       return structural({ op: 'moveProject', id: article.id, dir: dir }, { selector: '#' + article.id + ' h2' })
     }
-    var i = blocks.indexOf(el), j = i + dir, other = blocks[j]
-    if (!other || (dir < 0 ? el.previousElementSibling : el.nextElementSibling) !== other) return
+    // A text block passes over the spaces next to it to the next text block; the spaces stay in place. A space moves one
+    // block at a time.
+    var i = blocks.indexOf(el), j = i + dir
+    while (!isSpace(el) && isSpace(blocks[j])) j += dir
+    var other = blocks[j]
+    if (!other) return
+    // Only within the same group: the two blocks are siblings with nothing but spaces between them.
+    var step = function (n) { return dir < 0 ? n.previousElementSibling : n.nextElementSibling }
+    var between = [], n = step(el)
+    while (n && n !== other && isSpace(n)) { between.push(n); n = step(n) }
+    if (n !== other) return
     save()
-    send([{ op: 'move', index: i, dir: dir, before: source[i], otherBefore: source[j] }])
+    send([{ op: 'move', index: i, to: j, dir: dir, before: source[i], otherBefore: source[j] }])
     var swap = source[i]; source[i] = source[j]; source[j] = swap
     blocks[i] = other; blocks[j] = el
-    // The neighbour moves round the block, so the block keeps its focus and caret.
-    if (dir < 0) el.after(other)
-    else el.before(other)
+    // The neighbour and the spaces move round the block, so the block keeps its focus and caret.
+    if (dir < 0) {
+      el.after(other)
+      between.reverse().forEach(function (s) { other.before(s) })
+    } else {
+      el.before(other)
+      between.forEach(function (s) { el.before(s) })
+    }
     placeControls()
   }
 
@@ -744,9 +782,12 @@
     if (gap.contains(e.target) || asking) return
     var column = main.getBoundingClientRect(), pad = parseFloat(getComputedStyle(main).paddingLeft)
     var left = column.left + pad, right = column.right - pad
+    // Only where two text blocks meet with no space between them (or with the CSS gap between projects): 4px either side
+    // of their edge, or anywhere in a wider gap.
     for (var i = 0; i < blocks.length - 1; i++) {
+      if (isSpace(blocks[i]) || isSpace(blocks[i + 1])) continue
       var a = blocks[i].getBoundingClientRect(), b = blocks[i + 1].getBoundingClientRect()
-      if (e.clientY > a.bottom && e.clientY < b.top && e.clientX >= left && e.clientX <= right) {
+      if (e.clientY > a.bottom - 4 && e.clientY < b.top + 4 && e.clientX >= left && e.clientX <= right) {
         gapAt = i
         gap.style.left = left + scrollX + 'px'
         gap.style.width = right - left + 'px'
@@ -758,14 +799,12 @@
     hideGap()
   })
   document.addEventListener('mouseleave', hideGap)
-  // A new space is 300, a group's step, and takes the focus, so its toolbar offers the other heights.
+  // A new space is 150, the usual gap, and takes the focus, so its toolbar offers the other heights.
   function addSpace(i) {
     save()
-    var div = document.createElement('div')
-    div.className = 'space space-300'
+    var div = newSpace('150')
     blocks[i].after(div)
-    setup(div)
-    send([{ op: 'insert', index: i, before: source[i], blocks: ['<div class="space space-300"></div>'] }])
+    send([{ op: 'insert', index: i, before: source[i], blocks: ['<div class="space space-150"></div>'] }])
     source.splice(i + 1, 0, '')
     blocks.splice(i + 1, 0, div)
     hideGap()
@@ -924,10 +963,14 @@
     current = null
     hideControls()
     if (plain(el) && !el.textContent.trim() && blocks.length > 1) {
+      // The space above it goes with it (or the one below, for a paragraph that opens its group).
+      var s = isSpace(blocks[i - 1]) ? i - 1 : isSpace(blocks[i + 1]) ? i + 1 : -1
       save()
-      send([{ op: 'remove', index: i, before: source[i] }])
-      source.splice(i, 1)
-      blocks.splice(i, 1)
+      send([{ op: 'remove', index: i, before: source[i] }].concat(s >= 0 ? [{ op: 'remove', index: s, before: '' }] : []))
+      if (s >= 0) blocks[s].remove()
+      var from = s >= 0 ? Math.min(i, s) : i, count = s >= 0 ? 2 : 1
+      source.splice(from, count)
+      blocks.splice(from, count)
       el.remove()
       return
     }

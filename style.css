@@ -9,7 +9,8 @@
 }
 :root {
   /* Spacing scale: the name is the size in rem times 100 (space-150 = 1.5rem = 24px), so a step in between fits without renaming.
-     Every margin and padding comes from it: 800 between projects, 300 between groups, 150 between paragraphs, 050 between list items. */
+     Every margin, padding and space comes from it. Blocks have no margins of their own: the gap between two of them is a space
+     block in the page (.space-100 … .space-600), so each gap is set where it is. Only projects stand 800 apart by the CSS. */
   --space-050: 0.5rem;
   --space-100: 1rem;
   --space-150: 1.5rem;
@@ -47,22 +48,21 @@ main {
 }
 /* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid and tracked in by 3%; bold in the text has their weight. */
 h1, h2, h3 { font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
-h1 { margin: 0 0 var(--space-200); font-size: 3rem; }
-/* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
-h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
-h3 { margin-top: var(--space-300); font-size: 1.5rem; }
-/* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand space-150 apart, the same step as everything below a title. */
-p { margin: 0 0 var(--space-150); text-wrap: pretty; }
-/* The intro under the name: two sizes up from the text, at 500. The contacts under it and the project list under the summary stand closer, space-100, as one group with what they follow. */
+h1, h2, h3, p, ul { margin: 0; }
+h1 { font-size: 3rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+/* Text fills its lines; only a too-short last line pulls a few words down. */
+p { text-wrap: pretty; }
+/* The intro under the name: two sizes up from the text, at 500. */
 p.lead { font-size: 1.5rem; line-height: 1.333; font-weight: 500; }
-p.lead, .about p { margin-bottom: var(--space-100); }
 /* List: bullets hanging in the indent, items closer to each other than paragraphs. */
-ul { margin: 0 0 var(--space-150); padding-left: var(--space-150); }
+ul { padding-left: var(--space-150); }
 li { text-wrap: pretty; }
 li + li { margin-top: var(--space-050); }
-/* Space: an empty block put between two others from edit mode, 100 to 600 of the spacing scale more between them. */
-.space { margin: 0; }
+/* Space: the gap between two blocks, 100 to 600 of the spacing scale; 150 is the usual one between paragraphs. */
 .space-100 { height: var(--space-100); }
+.space-150 { height: var(--space-150); }
 .space-200 { height: var(--space-200); }
 .space-300 { height: var(--space-300); }
 .space-400 { height: var(--space-400); }
@@ -91,7 +91,6 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .list .row { display: block; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list .row > span { white-space: nowrap; }
 .list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
-.about { margin-top: var(--space-300); }
 article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
 .inner header + article { margin-top: var(--space-300); }
 @media (max-width: 480px) {

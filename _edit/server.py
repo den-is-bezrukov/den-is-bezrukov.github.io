@@ -20,7 +20,8 @@ from html.parser import HTMLParser
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITABLE = ('h1', 'h2', 'h3', 'p', 'ul')
 # Spaces between blocks: <div class="space space-300"></div>, 16 to 96px.
-SPACES = ('100', '200', '300', '400', '500', '600')
+SPACES = ('100', '150', '200', '300', '400', '500', '600')
+ONLY_SPACES = re.compile(r'(\s*<div class="space[^"]*"></div>)*\s*')
 PORT = 8765
 LOCK = threading.Lock()
 # Earlier versions of every page, also kept as files in _edit/history (not in git), the last 200 per page.
@@ -244,11 +245,12 @@ def apply(source, edit, spans, articles):
             source = source[:end] + '</%s>' % new + source[close:]
         source = source[:tag] + retag(source[tag:start], name, new, edit.get('cls')) + source[start:]
     elif op == 'move':
-        other = spans[edit['index'] + edit['dir']]
+        # The block swaps places with the next block up or down; the spaces between them stay where they are.
+        other = spans[edit.get('to', edit['index'] + edit['dir'])]
         if source[other[2]:other[3]] != edit['otherBefore']:
             raise Refused('changed')
         (a1, a2), (b1, b2) = sorted([(tag, close), (other[1], other[3] + len('</%s>' % other[0]))])
-        if source[a2:b1].strip():
+        if not ONLY_SPACES.fullmatch(source[a2:b1]):
             raise Refused('not neighbours')
         source = source[:a1] + source[b1:b2] + source[a2:b1] + source[a1:a2] + source[b2:]
     return source
