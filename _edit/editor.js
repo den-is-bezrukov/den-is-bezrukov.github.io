@@ -637,6 +637,16 @@
     b.dataset.size = s[0]
     return b
   }))
+  // ↩ brings a space back to the page's usual gap for its place, shown only while it is set otherwise.
+  var resetGroup = group([button('↩', function (el) { resize(el, usualGap(el)) })])
+  function usualGap(el) {
+    var i = blocks.indexOf(el), prev = blocks[i - 1], next = blocks[i + 1]
+    // A space closing its group (the header) stands between groups.
+    if (!el.nextElementSibling || next && next.tagName === 'H3') return '300'
+    if (prev && prev.tagName === 'H1') return '200'
+    if (prev && (prev.classList.contains('lead') || prev.closest('.about'))) return '100'
+    return '150'
+  }
   var moveGroups = [group([button('↑', function (el) { move(el, -1) })]), group([button('↓', function (el) { move(el, 1) })])]
 
   function selected() {
@@ -650,6 +660,7 @@
     styleGroup.hidden = words || fixed(current)
     wrapGroup.hidden = words || space
     sizeGroup.hidden = !space
+    resetGroup.hidden = !space || current.classList.contains('space-' + usualGap(current))
     moveGroups[0].hidden = moveGroups[1].hidden = words || space
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
