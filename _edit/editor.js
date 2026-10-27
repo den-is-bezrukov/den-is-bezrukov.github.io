@@ -935,17 +935,6 @@
     render()
     placeControls()
   }
-  // Backspace or Delete on a space takes it away.
-  function removeSpace(el) {
-    var i = blocks.indexOf(el)
-    save()
-    send([{ op: 'remove', index: i, before: source[i] }])
-    source.splice(i, 1)
-    blocks.splice(i, 1)
-    current = null
-    hideControls()
-    el.remove()
-  }
   // A project's anchor (the resume links to projects by it) stands at the bottom of the gap above the project, in grey
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape, or leaving it empty, brings the old one back.
@@ -1102,10 +1091,8 @@
       else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
       else lineBreak()
     }
-    if (block && block.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) {
-      e.preventDefault()
-      return removeSpace(block)
-    }
+    // A space comes and goes only with its paragraph; Backspace and Delete leave it be.
+    if (block && block.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) return e.preventDefault()
     if (el && e.key === 'Backspace') {
       var li = el.tagName === 'UL' && itemAt(el)
       if (li ? atStart(li) : atStart(el)) {
