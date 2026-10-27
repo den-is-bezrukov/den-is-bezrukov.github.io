@@ -537,7 +537,7 @@
   }
 
   // The mark under the block being edited: one shape that follows its lines like a highlighter, the full line height tall
-  // and 4px past the words on every side, every corner rounded by 4px (less where a step is narrower); list items, set
+  // and 4px past the words on either side, every corner rounded by 4px (less where a step is narrower); list items, set
   // apart, get a shape each.
   var SVG = 'http://www.w3.org/2000/svg'
   var markSvg = document.createElementNS(SVG, 'svg')
@@ -581,10 +581,6 @@
       if (!i || l.top - lines[i - 1].bottom > 1) shapes.push(shape = [])
       else l.top = lines[i - 1].bottom
       shape.push(l)
-    })
-    shapes.forEach(function (s) {
-      s[0].top -= 4
-      s[s.length - 1].bottom += 4
     })
     markPath.setAttribute('d', shapes.map(outline).join(' '))
     markSvg.style.left = scrollX + 'px'
