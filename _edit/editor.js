@@ -555,8 +555,9 @@
   })
   document.body.appendChild(linkOff)
 
-  // Typing / offers the site's other pages (and after page + #, its projects), # the projects of this page; ↑ ↓ pick one, Enter or a click takes
-  // it. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
+  // Typing / offers the site's other pages, # the projects of this page; ↑ ↓ pick one, Enter or a click takes it. A page
+  // picked keeps the field open on it, the page itself first and its projects under it, so a project is two picks away.
+  // Hidden projects aren't offered. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
   var PAGES = [['/', 'Главная'], ['/cases/', 'Проекты']]
   var suggestions = document.createElement('div')
   suggestions.className = 'edit-suggest'
@@ -580,7 +581,7 @@
         var list = [[page[0], page[1]]]
         Array.prototype.forEach.call(doc.querySelectorAll('main article[id]'), function (a) {
           var title = a.querySelector('h1, h2')
-          list.push([page[0] + '#' + a.id, title ? title.textContent.trim() : ''])
+          list.push([page[0] + '#' + a.id, title ? title.textContent.trim() : '', a.hidden])
         })
         return list
       })
@@ -592,12 +593,15 @@
     if (!asking || asking.kind !== 'link' || !/^[\/#]/.test(typed)) return
     loadKnown().then(function (all) {
       var here = location.pathname.replace(/[^/]*$/, '')
-      // # this page's projects; / the other pages, and once a # follows a page, that page's projects.
+      // # this page's projects; / the other pages; a page typed out whole, the page and its projects.
       var list = all.filter(function (s) {
+        if (s[2]) return false
         if (typed[0] === '#') return s[0].indexOf(here + '#') === 0 && s[0].slice(here.length).indexOf(typed) === 0
         var page = s[0].split('#')[0]
-        if (typed.indexOf('#') < 0) return s[0] === page && page !== here && page.indexOf(typed) === 0
-        return s[0] !== page && page !== here && s[0].indexOf(typed) === 0
+        if (page === here) return false
+        if (typed === page) return true
+        if (typed.indexOf('#') < 0) return s[0] === page && page.indexOf(typed) === 0
+        return s[0] !== page && s[0].indexOf(typed) === 0
       })
       suggestions.textContent = ''
       picked = 0
@@ -607,6 +611,7 @@
         grey.textContent = '  ' + s[1]
         b.appendChild(grey)
         b.dataset.href = relative(s[0])
+        b.dataset.path = s[0]
         b.classList.toggle('on', k === 0)
         b.addEventListener('click', function () { take(b) })
         suggestions.appendChild(b)
@@ -618,6 +623,13 @@
     })
   }
   function take(b) {
+    var path = b.dataset.path
+    var projects = path.indexOf('#') < 0 && known.some(function (k) { return !k[2] && k[0].indexOf(path + '#') === 0 })
+    if (projects && linkField.value.trim() !== path) {
+      linkField.value = path
+      linkField.setSelectionRange(path.length, path.length)
+      return suggest()
+    }
     linkField.value = b.dataset.href
     closeLink(true)
   }
@@ -633,6 +645,8 @@
     l.block.focus()
     if (apply) {
       var typed = linkField.value.trim()
+      // An address on the site typed out by hand goes in as the site writes it, /cases/#umo as cases/#umo.
+      if (/^\/(?!\/)/.test(typed)) typed = relative(typed)
       setLink(l.range, l.link, typed && (address(typed) || typed))
       l.block.dispatchEvent(new Event('input', { bubbles: true }))
     }
@@ -767,11 +781,11 @@
     el.dispatchEvent(new Event('input', { bubbles: true }))
     render()
   })])
-  // The address a link to a project should have: on the home page cases/#umo once the project has its full text in
-  // cases, #umo before that; on another page, the project's anchor there.
+  // The address a link to a project should have: on the home page cases/#umo while the project's full text is shown in
+  // cases, #umo otherwise; on another page, the project's anchor there.
   function usualHref(link) {
     var id = (link.getAttribute('href') || '').split('#')[1], home = !document.querySelector('main.inner')
-    var full = known && known.some(function (k) { return k[0] === '/cases/#' + id })
+    var full = known && known.some(function (k) { return k[0] === '/cases/#' + id && !k[2] })
     return home && full ? 'cases/#' + id : '#' + id
   }
   loadKnown().then(function () { render() })

@@ -127,7 +127,7 @@ def line_start(source, pos):
 
 def project_row(source):
     """Where the project list under the summary begins and ends."""
-    m = re.search(r'<section class="about">.*?(<p class="meta list">.*?</p>)', source, re.S)
+    m = re.search(r'<section class="about">.*?(<p class="meta list(?: balance)?">.*?</p>)', source, re.S)
     if not m:
         raise Refused('no project list')
     return m.start(1), m.end(1)
@@ -448,6 +448,44 @@ def sync_order(path):
             write(other, result)
 
 
+def link_cases():
+    """A project's title on the home page and its line in the project list lead to its full text in cases while that is
+    shown there, and to the preview, the title plain, while it is hidden or missing; nobody sets these links by hand.
+    The home page's write is kept in history like the editor's own."""
+    home, cases = [os.path.join(ROOT, page) for page in pages()]
+    with open(cases, encoding='utf-8') as f:
+        full = f.read()
+    shown = {a[0] for a in Blocks(full).articles if a[0] and not re.match(r'<article\b[^>]*\shidden\b', full[a[1]:])}
+    with open(home, encoding='utf-8') as f:
+        source = f.read()
+    result = source
+    # From the last project up, so the places of the ones above stay as they were.
+    for id, a1, a2 in reversed(Blocks(source).articles):
+        title = id and re.compile(r'<h2\b[^>]*>(.*?)</h2>', re.S).search(result, a1, a2)
+        if not title:
+            continue
+        inner = title.group(1)
+        # A title that is wholly a link within the site loses it; a link out to another site stays.
+        link = re.fullmatch(r'<a href="([^"]*)">((?:(?!</a>).)*)</a>', inner, re.S)
+        if link and not re.match(r'[a-z]+:|//', link.group(1)):
+            inner = link.group(2)
+        if id in shown:
+            inner = '<a href="cases/#%s">%s</a>' % (id, inner)
+        result = result[:title.start(1)] + inner + result[title.end(1):]
+    try:
+        start, end = project_row(result)
+        row = re.sub(r'<a href="[^"]*#([a-z0-9-]+)">',
+                     lambda m: '<a href="%s#%s">' % ('cases/' if m.group(1) in shown else '', m.group(1)), result[start:end])
+        result = result[:start] + row + result[end:]
+    except Refused:
+        pass
+    if result != source:
+        snapshot(home, source)
+        undone.setdefault(home, []).append(source)
+        redone[home] = []
+        write(home, result)
+
+
 def swap_in_order(source, found, order):
     """The spans found (start, end, id) swapped around so their ids come in the given order, each keeping its slot."""
     shared = [f for f in found if f[2] in order]
@@ -538,6 +576,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         relink_others(path, edit['before'], edit['id'])
                     if edit.get('op') == 'moveProject':
                         sync_order(path)
+                link_cases()
                 return self.send_body('{"ok": true}', 'application/json')
             # Undo and redo only step through the editor's own writes; a file changed from outside stops them.
             back, forth = (undone, redone) if action == '/undo' else (redone, undone)
@@ -548,6 +587,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             forth.setdefault(path, []).append(source)
             snapshot(path, source)
             write(path, back[path].pop())
+            # A step back on the cases page can show or hide a full text; on the home page itself it stays a plain step.
+            if path != os.path.join(ROOT, pages()[0]):
+                link_cases()
         self.send_body('{"ok": true}', 'application/json')
 
 
@@ -562,6 +604,8 @@ if __name__ == '__main__':
             break
         except OSError:
             continue
+    # Files changed outside the editor (a pull, a hand edit) get their links to the full texts right before anything opens.
+    link_cases()
     url = f'http://localhost:{port}/'
     print(f'Просмотр: {url}\nПравка: {url}?edit\nОстановить: Ctrl+C')
     if '--no-open' not in sys.argv:
