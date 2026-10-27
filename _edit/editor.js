@@ -18,6 +18,8 @@
     ':root { --bg: #fafafa; }' +
     // The block being edited is marked by a light grey shape under its lines (drawn by mark()), not by a box around it.
     '[contenteditable]:focus { outline: none; }' +
+    // A link is selected like the words around it, not dragged away.
+    'main a { -webkit-user-drag: none; user-drag: none; }' +
     '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #f0f0f0; }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
@@ -725,6 +727,18 @@
     render()
     placeControls()
   })
+  function firstWord(range) {
+    var walker = document.createTreeWalker(current, NodeFilter.SHOW_TEXT), part = document.createRange()
+    for (var n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!range.intersectsNode(n)) continue
+      part.selectNodeContents(n)
+      if (n === range.startContainer) part.setStart(n, range.startOffset)
+      if (n === range.endContainer) part.setEnd(n, range.endOffset)
+      var box = Array.prototype.filter.call(part.getClientRects(), function (r) { return r.width > 1 })[0]
+      if (box) return box
+    }
+    return null
+  }
   function placeControls() {
     if (!current) return
     mark()
@@ -738,9 +752,10 @@
     var top = isSpace(current) ? rect.top + (rect.height - size.height) / 2 : rect.top - size.height
     // With words selected, BOLD | LINK stand right on the line of the first selected word, its left edge 4px before it.
     if (selected()) {
-      var word = getSelection().getRangeAt(0).getClientRects()[0]
+      // The first box of the selected text itself: not the empty edge of a line, a row's box or a hidden dot between links.
+      var lh = parseFloat(getComputedStyle(current).lineHeight) || 24
+      var word = firstWord(getSelection().getRangeAt(0))
       if (word) {
-        var lh = parseFloat(getComputedStyle(current).lineHeight) || word.height
         left = Math.max(8, Math.min(word.left - ring, document.documentElement.clientWidth - size.width - 8))
         top = word.top - (lh - word.height) / 2 - size.height
       }
