@@ -62,13 +62,18 @@
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, Remove at the
+    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, Hide and Drop at the
     // right end of its line; under the pointer, + ↑ ↓ 8px above it.
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; padding-bottom: 16px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case-line { display: flex; justify-content: space-between; align-self: stretch; }' +
-    '.edit-case-off { all: unset; display: none; text-transform: none; cursor: pointer; }' +
-    '.edit-case-off:hover { color: var(--text); }' +
-    '.edit-case:focus-within .edit-case-off { display: block; }' +
+    '.edit-case-acts { display: none; gap: 16px; }' +
+    '.edit-case:focus-within .edit-case-acts { display: flex; }' +
+    '.edit-case-acts button { all: unset; text-transform: none; cursor: pointer; }' +
+    '.edit-case-acts button:hover { color: var(--text); }' +
+    // A project hidden from the site stays in the editor, faint, with its line in the project list.
+    'main article[hidden] { display: block; }' +
+    'main article[hidden] > :not(.edit-case), main .list .row > span[hidden] { opacity: 0.3; }' +
+    'main .list .row > span[hidden] { display: inline; }' +
     '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
     '.edit-case-name:focus-within [contenteditable] { color: var(--text); }' +
     // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
@@ -121,7 +126,7 @@
       // items get their break point back.
       .replace(/\u200b/g, '')
       .replace(/(<wbr>)?<span><\/span>(<wbr>)?/g, '')
-      .replace(/<\/span>(<wbr>)?<span>/g, '</span><wbr><span>')
+      .replace(/<\/span>(<wbr>)?<span( hidden)?>/g, '</span><wbr><span$2>')
       // Two pieces of one link side by side (an item joined back after a cut) become one link again.
       .replace(/(<a href="([^"]*)">)((?:(?!<\/a>).)*)<\/a><a href="\2">/g, '$1$3')
   }
@@ -973,7 +978,7 @@
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
-  // other page; while it is typed into: Remove takes the project off this page.
+  // other page; while it is typed into: Hide (or Show) takes it off the site or puts it back, Drop takes it off this page.
   // The first project has no ↑, the last no ↓.
   var total = document.querySelectorAll('main article').length
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
@@ -985,17 +990,17 @@
     var name = document.createElement('span')
     name.className = 'edit-case-name'
     name.append('#', id)
-    var line = document.createElement('div'), off = document.createElement('button')
+    var line = document.createElement('div'), acts = document.createElement('div')
     line.className = 'edit-case-line'
-    off.className = 'edit-case-off'
-    off.textContent = 'Remove'
-    off.addEventListener('pointerdown', function (e) { e.preventDefault() })
-    off.addEventListener('mousedown', function (e) { e.preventDefault() })
-    off.addEventListener('click', function () {
+    acts.className = 'edit-case-acts'
+    acts.append(caseAct(article.hidden ? 'Show' : 'Hide', function () {
+      gone()
+      structural({ op: 'hideProject', article: n, before: article.id, hidden: !article.hidden }, null)
+    }), caseAct('Drop', function () {
       gone()
       structural({ op: 'removeProject', article: n, before: article.id }, null)
-    })
-    line.append(name, off)
+    }))
+    line.append(name, acts)
     tag.append(line, caseTools([['+', function () {
       gone()
       structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
@@ -1028,6 +1033,14 @@
     })
     return { article: article, tag: tag }
   })
+  function caseAct(label, action) {
+    var b = document.createElement('button')
+    b.textContent = label
+    b.addEventListener('pointerdown', function (e) { e.preventDefault() })
+    b.addEventListener('mousedown', function (e) { e.preventDefault() })
+    b.addEventListener('click', action)
+    return b
+  }
   function caseTools(items) {
     var bar = document.createElement('div')
     bar.className = 'edit-tools'

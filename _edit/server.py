@@ -134,7 +134,7 @@ def project_row(source):
 
 
 def entry(row, id):
-    return re.search(r'<span><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
+    return re.search(r'<span(?: hidden)?><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
 
 
 def relink(source, prefix, old, new):
@@ -231,6 +231,26 @@ def apply(source, edit, spans, articles):
         new = '<span><a href="#%s">Новый проект</a></span><wbr>' % id
         m = entry(row, here[0] or '') if here[0] else None
         row = row[:m.start()] + new + row[m.start():] if m else re.sub(r'(</span>\s*</p>)$', '<wbr>' + new[:-len('<wbr>')] + r'\1', row)
+        return source[:start] + row + source[end:]
+    if op == 'hideProject':
+        # A project hidden from the site (or shown again), with its line in the project list; the editor still shows it.
+        id, a1, _ = articles[edit['article']]
+        if (id or '') != (edit.get('before') or ''):
+            raise Refused('changed')
+        hide = bool(edit.get('hidden'))
+        tag_end = source.index('>', a1)
+        start_tag = re.sub(r'\shidden\b', '', source[a1:tag_end]) + (' hidden' if hide else '')
+        source = source[:a1] + start_tag + source[tag_end:]
+        if not id:
+            return source
+        try:
+            start, end = project_row(source)
+        except Refused:
+            return source
+        row = source[start:end]
+        m = re.search(r'<span( hidden)?>(<a href="[^"]*#%s">)' % re.escape(id), row)
+        if m:
+            row = row[:m.start()] + ('<span hidden>' if hide else '<span>') + m.group(2) + row[m.end():]
         return source[:start] + row + source[end:]
     if op == 'removeProject':
         # The project goes from this page, with its line in the project list; the other page keeps its own.
