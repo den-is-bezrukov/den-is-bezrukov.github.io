@@ -53,7 +53,7 @@
     'main .space { position: relative; cursor: pointer; }' +
     'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
     // Under the pointer, or picked, the line gives way to the space's height in pixels on a light grey tag in its middle.
-    'main .space:hover::after, main .space:focus::after { top: 50%; height: 16px; min-width: 40px; aspect-ratio: auto; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; border-radius: 4px; background: #f0f0f0; font: 500 12px/1 "Geist Mono", ui-monospace, monospace; color: var(--text); }' +
+    'main .space:hover::after, main .space:focus::after { top: 50%; height: 24px; min-width: 56px; aspect-ratio: auto; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; background: #f0f0f0; font: 500 14px/1.15 "Geist Mono", ui-monospace, monospace; color: #808080; }' +
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
@@ -694,7 +694,8 @@
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = isSpace(current) ? rect.left + (rect.width - size.width) / 2 : rect.left - ring
     left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
-    var top = rect.top - size.height
+    // The toolbar stands right on the highlight: a text block's first line, a space's tag in its middle (24px tall).
+    var top = isSpace(current) ? rect.top + rect.height / 2 - 12 - size.height : rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
