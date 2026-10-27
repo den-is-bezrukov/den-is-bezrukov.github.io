@@ -134,7 +134,7 @@ def project_row(source):
 
 
 def entry(row, id):
-    return re.search(r'<span(?: hidden)?><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
+    return re.search(r'<span(?: hidden(?:="")?)?><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
 
 
 def relink(source, prefix, old, new):
@@ -239,7 +239,7 @@ def apply(source, edit, spans, articles):
             raise Refused('changed')
         hide = bool(edit.get('hidden'))
         tag_end = source.index('>', a1)
-        start_tag = re.sub(r'\shidden\b', '', source[a1:tag_end]) + (' hidden' if hide else '')
+        start_tag = re.sub(r'\shidden(="")?', '', source[a1:tag_end]) + (' hidden' if hide else '')
         source = source[:a1] + start_tag + source[tag_end:]
         if not id:
             return source
@@ -248,7 +248,7 @@ def apply(source, edit, spans, articles):
         except Refused:
             return source
         row = source[start:end]
-        m = re.search(r'<span( hidden)?>(<a href="[^"]*#%s">)' % re.escape(id), row)
+        m = re.search(r'<span( hidden(?:="")?)?>(<a href="[^"]*#%s">)' % re.escape(id), row)
         if m:
             row = row[:m.start()] + ('<span hidden>' if hide else '<span>') + m.group(2) + row[m.end():]
         return source[:start] + row + source[end:]

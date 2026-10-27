@@ -126,6 +126,8 @@
       // In a row of links: the stand-in that holds the caret in a new item goes, an item left empty goes, and every two
       // items get their break point back.
       .replace(/\u200b/g, '')
+      // The browser writes a hidden item back as hidden="": the file keeps the plain hidden.
+      .replace(/ hidden=""/g, ' hidden')
       .replace(/(<wbr>)?<span><\/span>(<wbr>)?/g, '')
       .replace(/<\/span>(<wbr>)?<span( hidden)?>/g, '</span><wbr><span$2>')
       // Two pieces of one link side by side (an item joined back after a cut) become one link again.
