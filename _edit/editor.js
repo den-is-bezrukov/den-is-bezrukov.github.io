@@ -57,13 +57,14 @@
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
+    '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 8px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
     '.edit-case-name:focus-within [contenteditable] { color: var(--text); }' +
     // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
     '.edit-case-name:focus-within { background: #f0f0f0; box-shadow: -4px 0 0 #f0f0f0, 4px 0 0 #f0f0f0; border-radius: 4px; }' +
-    // Over the anchor, 8px above it: + ↑ ↓ under the pointer, × while it is typed into.
-    '.edit-case .edit-tools { left: 50%; top: calc(50% - 32px); transform: translate(-50%, -50%); text-transform: none; }' +
+    // At the bottom of the gap, 8px above the project, the toolbar right on top of it: + ↑ ↓ under the pointer, × while it
+    // is typed into.
+    '.edit-case .edit-tools { position: static; order: -1; font-size: 14px; line-height: 1.15; text-transform: none; }' +
     '.edit-case:hover:not(:focus-within) .edit-tools.moves, .edit-case:focus-within .edit-tools.off { display: flex; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
@@ -895,7 +896,7 @@
     hideControls()
     el.remove()
   }
-  // A project's anchor (the resume links to projects by it) stands in the middle of the gap above the project, in grey
+  // A project's anchor (the resume links to projects by it) stands at the bottom of the gap above the project, in grey
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape brings the old one back; an empty one takes it off, along with the project's line in the project list.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
@@ -966,7 +967,7 @@
       if (!document.getElementById(name)) return name
     }
   }
-  // Each anchor is as tall as the gap above its project, its text in the middle.
+  // Each anchor is as tall as the gap above its project, its text at the bottom.
   function placeCases() {
     cases.forEach(function (c) { c.tag.style.height = getComputedStyle(c.article).marginTop })
   }
