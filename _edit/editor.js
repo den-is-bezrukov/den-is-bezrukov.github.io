@@ -14,8 +14,6 @@
   style.textContent =
     // The editor's own lettering is Geist Mono, kept in _edit with its licence, so the site never loads it.
     '@font-face { font-family: "Geist Mono"; src: url("/_edit/GeistMonoVariable.woff2") format("woff2"); font-weight: 100 900; }' +
-    // In edit mode the page stands on #fafafa, so the white toolbar sits a step above it.
-    ':root { --bg: #fafafa; }' +
     // The block being edited is marked by a light grey shape under its lines (drawn by mark()), not by a box around it.
     '[contenteditable]:focus { outline: none; }' +
     // A link is selected like the words around it, not dragged away.
