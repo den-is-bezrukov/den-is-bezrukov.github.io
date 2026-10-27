@@ -127,6 +127,8 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
      start a step further from the summary than from one another. */
   .about .space, .about .list, .list .row > span:has(a[href$=".pdf"]) { display: none; }
   .about + article { margin-top: var(--space-400); }
+  /* A row of links runs on one line on paper: the page is wide enough, so its hand-set breaks are dropped. */
+  .list .row br { display: none; }
   p, ul, h1, h2, h3 { break-inside: avoid; }
   /* A title carries an unseen tail as tall as its grey line and a few lines of text: with less room than that left, the
      title goes over to the next page. */
