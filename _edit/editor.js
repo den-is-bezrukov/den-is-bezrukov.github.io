@@ -67,7 +67,7 @@
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; padding-bottom: 16px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case-line { display: flex; justify-content: space-between; align-self: stretch; }' +
     '.edit-case-acts { display: none; gap: 16px; }' +
-    '.edit-case:focus-within .edit-case-acts { display: flex; }' +
+    '.edit-case-name:focus-within + .edit-case-acts { display: flex; }' +
     '.edit-case-acts button { all: unset; text-transform: none; cursor: pointer; }' +
     '.edit-case-acts button:hover { color: var(--text); }' +
     // ╳ is a box-drawing glyph, a cell of 0.6 by 1.2 em; squeezed into a square as tall as a capital it sits with the words.
@@ -80,7 +80,14 @@
     // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
     '.edit-case-name:focus-within { background: #f0f0f0; box-shadow: -4px 0 0 #f0f0f0, 4px 0 0 #f0f0f0; border-radius: 4px; }' +
     '.edit-case .edit-tools { position: static; order: -1; font-size: 14px; line-height: 1.15; text-transform: none; }' +
-    '.edit-case:hover:not(:focus-within) .edit-tools { display: flex; }' +
+    '.edit-case:hover:not(:focus-within) .edit-tools.moves { display: flex; }' +
+    // The gap above a project, one for the whole page: under the pointer its edges and its height, picked (a click on the
+    // gap itself) the heights to choose in its middle.
+    '.edit-case:focus { outline: none; }' +
+    '.edit-case.paced:hover, .edit-case.paced:focus { box-shadow: inset 0 1px rgba(0, 0, 0, 0.1), inset 0 -1px rgba(0, 0, 0, 0.1); }' +
+    '.edit-case.paced:hover:not(:focus)::after { content: attr(data-gap); position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 14px; line-height: 1.15; }' +
+    '.edit-case .edit-tools.sizes { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }' +
+    '.edit-case:focus .edit-tools.sizes { display: flex; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -1041,6 +1048,9 @@
   // other page; while it is typed into: Hide (or Show) takes it off the site or puts it back, ╳ takes it off this page.
   // The first project has no ↑, the last no ↓.
   var total = document.querySelectorAll('main article').length
+  // The gap between projects: 48 to 128px, the classes gap-300 … gap-600 on <main>, none for the usual 800.
+  var main = document.querySelector('main')
+  var GAPS = [['300', '48'], ['400', '64'], ['500', '80'], ['600', '96'], ['800', '128']]
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
@@ -1061,10 +1071,17 @@
       structural({ op: 'removeProject', article: n, before: article.id }, null)
     }))
     line.append(name, acts)
-    tag.append(line, caseTools([['+', function () {
+    tag.append(line, caseTools('moves', [['+', function () {
       gone()
       structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
     }]].concat(n > 0 ? [['↑', function () { moveCase(-1) }]] : [], n < total - 1 ? [['↓', function () { moveCase(1) }]] : [])))
+    // The gap above every project but one right under the page's header can be set, for all of them at once.
+    if (!(article.previousElementSibling && article.previousElementSibling.tagName === 'HEADER')) {
+      tag.classList.add('paced')
+      tag.tabIndex = -1
+      tag.addEventListener('mousedown', function (e) { if (e.target === tag) { e.preventDefault(); tag.focus() } })
+      tag.append(caseTools('sizes', GAPS.map(function (g) { return [g[1], function () { setGap(g[0]) }] })))
+    }
     article.prepend(tag)
     function moveCase(dir) {
       var to = n + dir
@@ -1101,12 +1118,13 @@
     b.addEventListener('click', action)
     return b
   }
-  function caseTools(items) {
+  function caseTools(kind, items) {
     var bar = document.createElement('div')
-    bar.className = 'edit-tools'
+    bar.className = 'edit-tools ' + kind
     items.forEach(function (item) {
       var b = document.createElement('button')
       b.textContent = item[0]
+      b.dataset.label = item[0]
       b.addEventListener('pointerdown', function (e) { e.preventDefault() })
       b.addEventListener('mousedown', function (e) { e.preventDefault() })
       b.addEventListener('click', item[1])
@@ -1123,9 +1141,29 @@
       if (!document.getElementById(name)) return name
     }
   }
-  // Each anchor is as tall as the gap above its project, its text at the bottom.
+  // Each anchor is as tall as the gap above its project, its text at the bottom; the gap's height in pixels is kept on it
+  // for the pointer to show, and the current one is marked among the heights to choose.
   function placeCases() {
-    cases.forEach(function (c) { c.tag.style.height = getComputedStyle(c.article).marginTop })
+    var gap = currentGap()
+    cases.forEach(function (c) {
+      var height = getComputedStyle(c.article).marginTop
+      c.tag.style.height = height
+      c.tag.dataset.gap = Math.round(parseFloat(height))
+      Array.prototype.forEach.call(c.tag.querySelectorAll('.sizes button'), function (b) {
+        b.classList.toggle('on', GAPS.some(function (g) { return g[0] === gap && g[1] === b.dataset.label }))
+      })
+    })
+  }
+  function currentGap() {
+    var m = main.className.match(/\bgap-(\d+)/)
+    return m ? m[1] : '800'
+  }
+  function setGap(size) {
+    save()
+    send([{ op: 'caseGap', size: size }])
+    main.className = main.className.replace(/\s*\bgap-\d+/g, '').trim()
+    if (size !== '800') main.classList.add('gap-' + size)
+    placeCases()
   }
   placeCases()
   addEventListener('resize', placeCases)

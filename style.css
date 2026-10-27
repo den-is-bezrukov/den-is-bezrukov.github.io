@@ -94,14 +94,21 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .list .row { display: block; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list .row > span { white-space: nowrap; }
 .list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
-article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
+/* Projects stand one gap apart, the same all down a page: 800 unless the page's main says otherwise (gap-300 … gap-600,
+   set in edit mode). On phones the gap is a quarter less. */
+main { --case-gap: var(--space-800); }
+main.gap-300 { --case-gap: var(--space-300); }
+main.gap-400 { --case-gap: var(--space-400); }
+main.gap-500 { --case-gap: var(--space-500); }
+main.gap-600 { --case-gap: var(--space-600); }
+article { margin-top: var(--case-gap); scroll-margin-top: var(--case-gap); }
 .inner header + article { margin-top: var(--space-300); }
 /* The page ends on a link to all the projects, as far below the last project as projects stand apart. */
-main > footer { margin-top: var(--space-800); }
+main > footer { margin-top: var(--case-gap); }
 @media (max-width: 480px) {
   main { padding: var(--space-400) var(--space-100); }
-  article { margin-top: var(--space-600); scroll-margin-top: var(--space-600); }
-  main > footer { margin-top: var(--space-600); }
+  article { margin-top: calc(var(--case-gap) * 0.75); scroll-margin-top: calc(var(--case-gap) * 0.75); }
+  main > footer { margin-top: calc(var(--case-gap) * 0.75); }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }

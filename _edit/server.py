@@ -232,6 +232,16 @@ def apply(source, edit, spans, articles):
         m = entry(row, here[0] or '') if here[0] else None
         row = row[:m.start()] + new + row[m.start():] if m else re.sub(r'(</span>\s*</p>)$', '<wbr>' + new[:-len('<wbr>')] + r'\1', row)
         return source[:start] + row + source[end:]
+    if op == 'caseGap':
+        # The gap between projects on this page, one for all of them: a class on <main>, none for the usual 800.
+        size = str(edit.get('size'))
+        if size not in ('300', '400', '500', '600', '800'):
+            raise Refused('bad gap')
+        m = re.search(r'<main\b[^>]*>', source)
+        tag = re.sub(r'\sclass="[^"]*"', lambda c: re.sub(r'\s*\bgap-\d+', '', c.group(0)).replace(' class=""', ''), m.group(0))
+        if size != '800':
+            tag = with_class(tag, 'gap-' + size, True)
+        return source[:m.start()] + tag + source[m.end():]
     if op == 'hideProject':
         # A project hidden from the site (or shown again), with its line in the project list; the editor still shows it.
         id, a1, _ = articles[edit['article']]
