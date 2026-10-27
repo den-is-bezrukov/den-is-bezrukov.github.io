@@ -37,6 +37,7 @@
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; text-transform: uppercase; color: var(--muted); }' +
     '.edit-tools button[data-style] { min-width: 48px; }' +
     '.edit-tools button[data-style^="h"] { min-width: 0; width: 28px; }' +
+    '.edit-tools button[data-size] { width: 28px; letter-spacing: -0.05em; }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; }' +
     '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 0.5px solid rgba(0, 0, 0, 0.1); }' +
@@ -44,11 +45,6 @@
     '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 4px; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
-    // Between two blocks under the pointer: a line across the column, SPACE on it at the right.
-    // It lies under the block's toolbar, SPACE centred on the line.
-    '.edit-gap { position: absolute; z-index: 0; display: none; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }' +
-    '.edit-gap.shown { display: block; }' +
-    '.edit-gap .edit-tools { right: 0; top: 0.5px; transform: translateY(-50%); }' +
     'main .space:focus { outline: none; }' +
     // Every space is marked at the column's right edge by a line across its middle, as long as the space is tall.
     'main .space { position: relative; cursor: pointer; }' +
@@ -471,13 +467,14 @@
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
   var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['list', 'ul', '']]
-  var SPACES = ['100', '150', '200', '300', '400', '500', '600']
+  // A space's class on the spacing scale and its height in pixels, as its toolbar names it.
+  var SPACES = [['100', '16'], ['150', '24'], ['200', '32'], ['300', '48'], ['400', '64'], ['500', '80'], ['600', '96']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
     return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
   }
-  // Rows of links, breadcrumbs and spaces keep their markup; they can only move.
+  // Rows of links, breadcrumbs and spaces keep their markup; rows can only move, spaces only change their height.
   function fixed(el) {
     return el.classList.contains('list') || el.classList.contains('crumbs') || el.classList.contains('space')
   }
@@ -531,10 +528,10 @@
     save()
   })
   var wrapGroup = group([wrapButton])
-  // A space's height, 100 to 600 of the spacing scale, in place of the styles.
-  var sizeGroup = group(SPACES.map(function (size) {
-    var b = button(size, function (el) { resize(el, size) })
-    b.dataset.size = size
+  // A space's toolbar holds only its height, 16 to 96px, and stands at the column's right edge, over the space's mark.
+  var sizeGroup = group(SPACES.map(function (s) {
+    var b = button(s[1], function (el) { resize(el, s[0]) })
+    b.dataset.size = s[0]
     return b
   }))
   // # opens the anchors: the block's own one to put on or change, and every anchor on the page.
@@ -552,7 +549,7 @@
     styleGroup.hidden = words || fixed(current)
     wrapGroup.hidden = anchorGroup.hidden = words || space
     sizeGroup.hidden = !space
-    moveGroups[0].hidden = moveGroups[1].hidden = words
+    moveGroups[0].hidden = moveGroups[1].hidden = words || space
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
@@ -572,7 +569,8 @@
     var rect = current.getBoundingClientRect(), ring = 4 // the peach shape reaches 4px past the text on either side
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
-    var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
+    var left = isSpace(current) ? rect.right + ring - size.width : rect.left - ring
+    left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
     var top = rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
@@ -732,10 +730,10 @@
       if (!neighbour || neighbour.tagName !== 'ARTICLE') return
       return structural({ op: 'moveProject', id: article.id, dir: dir }, { selector: '#' + article.id + ' h2' })
     }
-    // A text block passes over the spaces next to it to the next text block; the spaces stay in place. A space moves one
-    // block at a time.
+    // A text block passes over the spaces next to it to the next text block; the spaces stay in place and don't move.
+    if (isSpace(el)) return
     var i = blocks.indexOf(el), j = i + dir
-    while (!isSpace(el) && isSpace(blocks[j])) j += dir
+    while (isSpace(blocks[j])) j += dir
     var other = blocks[j]
     if (!other) return
     // Only within the same group: the two blocks are siblings with nothing but spaces between them.
@@ -758,58 +756,7 @@
     placeControls()
   }
 
-  // Spaces: the pointer in the gap between two blocks shows a line there with SPACE, which puts a space between them.
-  var main = document.querySelector('main')
-  var gap = document.createElement('div'), gapAt = -1
-  gap.className = 'edit-gap'
-  var gapTools = document.createElement('div')
-  gapTools.className = 'edit-tools shown'
-  var gapButton = document.createElement('button')
-  gapButton.textContent = 'space'
-  gapButton.addEventListener('pointerdown', function (e) { e.preventDefault() })
-  gapButton.addEventListener('mousedown', function (e) { e.preventDefault() })
-  gapButton.addEventListener('click', function () { if (gapAt >= 0) addSpace(gapAt) })
-  var gapGroup = document.createElement('span')
-  gapGroup.appendChild(gapButton)
-  gapTools.appendChild(gapGroup)
-  gap.appendChild(gapTools)
-  document.body.appendChild(gap)
-  function hideGap() {
-    gap.classList.remove('shown')
-    gapAt = -1
-  }
-  document.addEventListener('mousemove', function (e) {
-    if (gap.contains(e.target) || asking) return
-    var column = main.getBoundingClientRect(), pad = parseFloat(getComputedStyle(main).paddingLeft)
-    var left = column.left + pad, right = column.right - pad
-    // Only where two text blocks meet with no space between them (or with the CSS gap between projects): 4px either side
-    // of their edge, or anywhere in a wider gap.
-    for (var i = 0; i < blocks.length - 1; i++) {
-      if (isSpace(blocks[i]) || isSpace(blocks[i + 1])) continue
-      var a = blocks[i].getBoundingClientRect(), b = blocks[i + 1].getBoundingClientRect()
-      if (e.clientY > a.bottom - 4 && e.clientY < b.top + 4 && e.clientX >= left && e.clientX <= right) {
-        gapAt = i
-        gap.style.left = left + scrollX + 'px'
-        gap.style.width = right - left + 'px'
-        gap.style.top = (a.bottom + b.top) / 2 + scrollY + 'px'
-        gap.classList.add('shown')
-        return
-      }
-    }
-    hideGap()
-  })
-  document.addEventListener('mouseleave', hideGap)
-  // A new space is 150, the usual gap, and takes the focus, so its toolbar offers the other heights.
-  function addSpace(i) {
-    save()
-    var div = newSpace('150')
-    blocks[i].after(div)
-    send([{ op: 'insert', index: i, before: source[i], blocks: ['<div class="space space-150"></div>'] }])
-    source.splice(i + 1, 0, '')
-    blocks.splice(i + 1, 0, div)
-    hideGap()
-    div.focus()
-  }
+  // A space's height, picked in its toolbar.
   function resize(el, size) {
     var i = blocks.indexOf(el)
     if (!el.classList.contains('space')) return
