@@ -2,7 +2,7 @@
 // Enter breaks the line (in a list it starts the next item), ⌘Enter adds a paragraph below the block, ⇧⌘Enter cuts the block
 // at the caret into a new paragraph, Backspace at the start of a paragraph joins it to the one above; ⌥Space sets a non-breaking space, ⌘K or pasting an address over selected words a link.
 // A toolbar above the block with the caret adds a section or a project (§), switches the block's style and its line layout
-// (Pretty, Balance) and moves it (↓ ↑); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
+// (pretty, balance), links words (a) and moves it (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p, main ul'))
   var source = window.EDIT_SOURCE
@@ -10,31 +10,33 @@
 
   var style = document.createElement('style')
   style.textContent =
-    '[contenteditable]:focus { outline: none; box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 6%, transparent); border-radius: 2px; background: color-mix(in srgb, currentColor 6%, transparent); }' +
-    '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 Inter, system-ui, sans-serif; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
+    // The editor's own lettering is Geist Mono, kept in _edit with its licence, so the site never loads it.
+    '@font-face { font-family: "Geist Mono"; src: url("/_edit/GeistMonoVariable.woff2") format("woff2"); font-weight: 100 900; }' +
+    // The block being edited is marked by a peach shape under its lines (drawn by mark()), not by a box around it.
+    '[contenteditable]:focus { outline: none; }' +
+    '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #ffeedd; }' +
+    '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 "Geist Mono", ui-monospace, monospace; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
     // The floating panels are white, a step lighter than the page's #fafafa.
-    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px 12px; border: 0; border-radius: 8px; font: 14px/1.143 Inter, system-ui, sans-serif; color: var(--text); background: #ffffff; box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent); outline: none; }' +
+    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 4px; font: 16px/1 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
     // The project anchors under the anchor field: one per line, the anchor in the text colour where it holds what is typed,
     // the project's title after it in grey, × at the end.
     '.edit-anchors { position: fixed; display: flex; flex-direction: column; width: 320px; max-width: calc(100vw - 32px); max-height: 50vh; overflow: auto; padding: 8px 0; color: var(--muted); }' +
     '.edit-anchors[hidden] { display: none; }' +
     '.edit-anchors div { display: flex; }' +
-    '.edit-anchors button { all: unset; box-sizing: border-box; padding: 4px 12px; cursor: pointer; font-weight: 500; }' +
+    '.edit-anchors button { all: unset; box-sizing: border-box; padding: 4px 8px; cursor: pointer; }' +
     '.edit-anchors button:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
     '.edit-anchors button:hover, .edit-anchors .on { color: var(--text); }' +
-    // Every button is 40px tall with 8px either side of its label, so any two labels are 16px apart; each group gets 8px more
-    // at its ends, 16px from the toolbar's edge or the 6% line between groups; the buttons touch, so the pointer goes straight
-    // from one to the next. Labels are set at 500, the current style at 600; a hidden copy of the label at 600 keeps each
-    // button as wide either way.
+    // Every button is 32px tall with 4px either side of its label, so labels in a group are 8px apart; each group gets 4px more
+    // at its ends, 8px from the toolbar's edge or the 0.5px line between groups, and is 32px wide at least; the buttons touch,
+    // so the pointer goes straight from one to the next. Labels are grey, the current style black at 600.
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; color: var(--muted); }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
-    '.edit-tools span { padding: 0 8px; }' +
-    '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }' +
+    '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; border-right: 0.5px solid rgba(0, 0, 0, 0.1); }' +
+    '.edit-tools span:last-child { border-right: 0; }' +
     '.edit-tools span[hidden] { display: none; }' +
-    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; height: 40px; padding: 0 8px; font-weight: 500; cursor: pointer; }' +
-    '.edit-tools button::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }' +
+    '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 4px; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
@@ -429,7 +431,7 @@
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
-  var STYLES = [['H1', 'h1', ''], ['H2', 'h2', ''], ['H3', 'h3', ''], ['Lead', 'p', 'lead'], ['Body', 'p', ''], ['Meta', 'p', 'meta'], ['List', 'ul', '']]
+  var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['ul', 'ul', '']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
@@ -472,46 +474,52 @@
   // § adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
   // is out for now.
   if (!home) group([button('§', addSection)])
-  // List works as a switch: pressed on a list, it turns the list back into Body.
-  var styleGroup = group(styles.map(function (s) {
+  // ul, the list, works as a switch: pressed on a list, it turns the list back into body; it stands in a group of its own.
+  var styleGroup = group(styles.filter(function (s) { return s[1] !== 'ul' }).map(styleButton))
+  var listGroup = group([styleButton(STYLES[6])])
+  function styleButton(s) {
     var b = button(s[0], function (el) {
       if (s[1] === 'ul' && el.tagName === 'UL') retype(el, 'p', '')
       else retype(el, s[1], s[2])
     })
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
-  }))
-  // The block's line layout, named as it is now: Pretty as the site lays out text everywhere, Balance with lines of nearly
+  }
+  // a links the selected words, as ⌘K does.
+  var linkGroup = group([button('a', openLink)])
+  // The block's line layout, named as it is now: pretty as the site lays out text everywhere, balance with lines of nearly
   // equal length (the balance class, on the site too); a press switches to the other.
-  var wrapButton = button('Pretty', function (el) {
+  var wrapButton = button('pretty', function (el) {
     el.classList.toggle('balance')
     render()
     placeControls()
     save()
   })
   group([wrapButton])
-  group([button('↓', function (el) { move(el, 1) })])
   group([button('↑', function (el) { move(el, -1) })])
+  group([button('↓', function (el) { move(el, 1) })])
 
 
   function render() {
     if (!current) return
-    styleGroup.hidden = fixed(current)
+    styleGroup.hidden = listGroup.hidden = linkGroup.hidden = fixed(current)
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
-    label(wrapButton, current.classList.contains('balance') ? 'Balance' : 'Pretty')
+    listGroup.firstChild.classList.toggle('on', now === 'ul')
+    label(wrapButton, current.classList.contains('balance') ? 'balance' : 'pretty')
   }
   function placeControls() {
     if (!current) return
-    var rect = current.getBoundingClientRect(), ring = 6 // the 6px highlight around a block being edited
+    mark()
+    var rect = current.getBoundingClientRect(), ring = 4 // the peach shape reaches 4px past the text on either side
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
-    var top = rect.top - ring - 8 - size.height
+    var top = rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
-    if (pinned) top = Math.min(8, rect.bottom + ring - size.height)
+    if (pinned) top = Math.min(8, rect.bottom - size.height)
     tools.style.position = pinned ? 'fixed' : ''
     tools.style.left = left + (pinned ? 0 : scrollX) + 'px'
     tools.style.top = top + (pinned ? 0 : scrollY) + 'px'
@@ -520,6 +528,74 @@
   addEventListener('resize', placeControls)
   function hideControls() {
     tools.classList.remove('shown')
+    markSvg.style.display = 'none'
+  }
+
+  // The mark under the block being edited: one shape that follows its lines like a highlighter, the full line height tall
+  // and 4px past the words on either side, every corner rounded by 4px (less where a step is narrower); list items, set
+  // apart, get a shape each.
+  var SVG = 'http://www.w3.org/2000/svg'
+  var markSvg = document.createElementNS(SVG, 'svg')
+  markSvg.setAttribute('class', 'edit-mark')
+  markSvg.style.display = 'none'
+  var markPath = document.createElementNS(SVG, 'path')
+  markSvg.appendChild(markPath)
+  document.body.appendChild(markSvg)
+  function mark() {
+    var el = current
+    if (!el || !tools.classList.contains('shown')) return
+    var lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.5
+    var range = document.createRange()
+    range.selectNodeContents(el)
+    // Lines: the words' boxes grouped by their middle, each line as tall as the line height around that middle.
+    var lines = []
+    Array.prototype.forEach.call(range.getClientRects(), function (r) {
+      if (!r.width) return
+      var mid = (r.top + r.bottom) / 2
+      var line = lines.filter(function (l) { return Math.abs(l.mid - mid) < lh / 2 })[0]
+      if (line) { line.left = Math.min(line.left, r.left); line.right = Math.max(line.right, r.right) }
+      else lines.push({ mid: mid, left: r.left, right: r.right })
+    })
+    // An empty block shows a stub of one line where the caret stands.
+    if (!lines.length) {
+      var box = el.getBoundingClientRect()
+      lines.push({ mid: box.top + lh / 2, left: box.left, right: box.left + 8 })
+    }
+    lines.sort(function (a, b) { return a.mid - b.mid })
+    var shapes = [], shape
+    lines.forEach(function (l, i) {
+      l.top = l.mid - lh / 2
+      l.bottom = l.mid + lh / 2
+      l.left -= 4
+      l.right += 4
+      if (!i || l.top - lines[i - 1].bottom > 1) shapes.push(shape = [])
+      else l.top = lines[i - 1].bottom
+      shape.push(l)
+    })
+    markPath.setAttribute('d', shapes.map(outline).join(' '))
+    markSvg.style.left = scrollX + 'px'
+    markSvg.style.top = scrollY + 'px'
+    markSvg.style.width = markSvg.style.height = '1px'
+    markSvg.style.display = ''
+  }
+  // The outline of a stack of lines: down the right edge, up the left one, then each corner rounded.
+  function outline(stack) {
+    var pts = []
+    stack.forEach(function (l) { pts.push([l.right, l.top], [l.right, l.bottom]) })
+    stack.slice().reverse().forEach(function (l) { pts.push([l.left, l.bottom], [l.left, l.top]) })
+    pts = pts.filter(function (p, i) {
+      var a = pts[(i + pts.length - 1) % pts.length], b = pts[(i + 1) % pts.length]
+      return !((a[0] === p[0] && p[0] === b[0]) || (a[1] === p[1] && p[1] === b[1]))
+    })
+    var n = pts.length
+    return pts.map(function (p, i) {
+      var a = pts[(i + n - 1) % n], b = pts[(i + 1) % n]
+      var da = Math.hypot(a[0] - p[0], a[1] - p[1]), db = Math.hypot(b[0] - p[0], b[1] - p[1])
+      var r = Math.min(4, da / 2, db / 2)
+      var p1 = [p[0] + (a[0] - p[0]) * r / da, p[1] + (a[1] - p[1]) * r / da]
+      var p2 = [p[0] + (b[0] - p[0]) * r / db, p[1] + (b[1] - p[1]) * r / db]
+      return (i ? 'L' : 'M') + p1.join(' ') + ' Q' + p.join(' ') + ' ' + p2.join(' ')
+    }).join(' ') + ' Z'
   }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return

@@ -1,9 +1,8 @@
-/* Base 16px, sizes in rem. Type: headings H1 / H2 / H3 at 3 / 2 / 1.5rem set solid (2 / 1.5 / 1.25rem on phones), the intro 1.25rem, text and grey service lines 1rem on a 1.6 line, the grey at 500. */
-/* Inter 4.1, the variable font with every glyph, kept next to the page: weight 100–900 and the optical size axis, so big headings
-   get Inter Display's shapes by themselves. */
+/* Base 16px, sizes in rem. Type: headings H1 / H2 / H3 at 3 / 2 / 1.5rem set solid (2 / 1.5 / 1.25rem on phones), the intro 1.5rem at 500 (1.25rem on phones), text and grey service lines 1rem on a 1.5 line. */
+/* Geist 1.8 by Vercel, the variable font (weight 100–900, Cyrillic included), kept next to the page with its licence. */
 @font-face {
-  font-family: Inter;
-  src: url("fonts/InterVariable.woff2") format("woff2");
+  font-family: Geist;
+  src: url("fonts/GeistVariable.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -21,8 +20,8 @@
   --space-800: 8rem;
   --bg: #fafafa;
   --text: #000000;
-  /* Two colours only: black text (90% white in the dark theme) on a ground of #fafafa, LoveFrom's, and a grey, #808080 (3.8:1, held up by its weight of 500), the text colour at 65% in the dark theme. */
-  --muted: #808080;
+  /* Two colours only: black text (90% white in the dark theme) on a ground of #fafafa, LoveFrom's, and a grey, #999999, the text colour at 65% in the dark theme. */
+  --muted: #999999;
 }
 /* The dark theme is off for now; to bring it back, take it out of this comment.
 @media (prefers-color-scheme: dark) {
@@ -37,7 +36,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 1rem/1.6 Inter, system-ui, -apple-system, sans-serif;
+  font: 1rem/1.5 Geist, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 main {
@@ -45,16 +44,17 @@ main {
   margin: 0 auto;
   padding: var(--space-800) var(--space-200);
 }
-/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid; bold in the text has their weight. Inter's optical size axis tightens the big ones by itself, and a tracking of -1% a little more. */
-h1, h2, h3 { font-weight: 600; line-height: 1; letter-spacing: -0.01em; }
+/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid and tracked in by 3%; bold in the text has their weight. */
+h1, h2, h3 { font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
 h1 { margin: 0 0 var(--space-200); font-size: 3rem; }
 /* Below a project or section title everything stands a text line apart: the grey line, paragraphs, the credits. */
 h2, h3 { margin: 0 0 var(--space-150); font-size: 2rem; }
 h3 { margin-top: var(--space-300); font-size: 1.5rem; }
 /* Text fills its lines; only a too-short last line pulls a few words down. Paragraphs stand space-150 apart, the same step as everything below a title. */
 p { margin: 0 0 var(--space-150); text-wrap: pretty; }
-/* The intro under the name: a size up from the text. */
-p.lead { font-size: 1.25rem; line-height: 1.5; }
+/* The intro under the name: two sizes up from the text, at 500. The contacts under it and the project list under the summary stand closer, space-100, as one group with what they follow. */
+p.lead { font-size: 1.5rem; line-height: 1.333; font-weight: 500; }
+p.lead, .about p { margin-bottom: var(--space-100); }
 /* List: bullets hanging in the indent, items closer to each other than paragraphs. */
 ul { margin: 0 0 var(--space-150); padding-left: var(--space-150); }
 li { text-wrap: pretty; }
@@ -75,17 +75,14 @@ a {
 /* On hover the underline darkens to 50% of the link colour, still lighter than the letters. */
 a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
 .nw { white-space: nowrap; }
-/* Meta: every grey line (under a title, credits, contacts, the project list, breadcrumbs), a step heavier than the text, so the lighter colour holds its own next to it. */
-.meta { color: var(--muted); font-weight: 500; }
+/* Meta: every grey line (under a title, credits, contacts, the project list, breadcrumbs), in the text's weight. */
+.meta { color: var(--muted); }
 /* Links in a row with a dot between them; the dot that would start a line is cut off, so no line starts or ends with one.
    The cutting happens in a row inside the paragraph, so the paragraph keeps its own box and its whole highlight in edit mode. */
-.list { line-height: 1.75; }
 .list .row { display: block; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list .row > span { white-space: nowrap; }
 .list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
 .about { margin-top: var(--space-300); }
-/* The project list leads into the projects below, so it stands a group apart from the summary. */
-.about .list { margin-top: var(--space-300); }
 article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
 .inner header + article { margin-top: var(--space-300); }
 @media (max-width: 480px) {
@@ -94,4 +91,5 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
+  p.lead { font-size: 1.25rem; line-height: 1.4; }
 }
