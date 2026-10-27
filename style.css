@@ -46,8 +46,9 @@ main {
   margin: 0 auto;
   padding: var(--space-800) var(--space-200);
 }
-/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid and tracked in by 3%; bold in the text has their weight. */
-h1, h2, h3 { font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
+/* Three heading steps, one size per tag on both pages: H1 the name, H2 a project's title, H3 a section of a full case. Headings are set solid, H1 alone tracked in by 3%; bold in the text has their weight. */
+h1, h2, h3 { font-weight: 600; line-height: 1; }
+h1 { letter-spacing: -0.03em; }
 h1, h2, h3, p, ul { margin: 0; }
 h1 { font-size: 3rem; }
 h2 { font-size: 2rem; }
