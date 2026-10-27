@@ -23,7 +23,16 @@
     '.edit-status.on { opacity: 1; }' +
     // The floating panels are white, a step lighter than the page's #fafafa, all lettering in them 14px.
     '.edit-link, .edit-tools { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 4px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
-    '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
+    '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); padding-right: 32px; }' +
+    '.edit-link-off { all: unset; position: fixed; z-index: 2; width: 32px; text-align: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); cursor: pointer; }' +
+    '.edit-link-off:hover { color: var(--text); }' +
+    '.edit-link-off[hidden] { display: none; }' +
+    // Pages and projects offered under the link field: the link in black, its title in grey after it.
+    '.edit-suggest { position: fixed; z-index: 1; display: flex; flex-direction: column; width: 320px; max-width: calc(100vw - 32px); max-height: 50vh; overflow: auto; padding: 4px 0; border-radius: 4px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08); }' +
+    '.edit-suggest[hidden] { display: none; }' +
+    '.edit-suggest button { all: unset; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); cursor: pointer; }' +
+    '.edit-suggest button span { color: var(--muted); }' +
+    '.edit-suggest button.on, .edit-suggest button:hover { color: var(--text); }' +
     // Every button is 32px tall with 4px either side of its label, so labels in a group are 8px apart; each group gets 4px more
     // at its ends, 8px from the toolbar's edge or the 0.5px line between groups, and is 32px wide at least; the buttons touch,
     // so the pointer goes straight from one to the next. Labels are grey capitals, the current style black at 600; in the
@@ -31,7 +40,7 @@
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; text-transform: uppercase; color: var(--muted); }' +
     '.edit-tools button[data-style] { min-width: 48px; }' +
     '.edit-tools button[data-style^="h"] { min-width: 0; width: 28px; }' +
-    '.edit-tools button[data-size] { width: 28px; letter-spacing: -0.05em; }' +
+    '.edit-tools button[data-size] { width: 28px; }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; }' +
     '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 0.5px solid rgba(0, 0, 0, 0.1); }' +
@@ -40,17 +49,20 @@
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
     'main .space:focus { outline: none; }' +
-    // Every space is marked at the column's right edge by a line across its middle, as long as the space is tall.
+    // Every space is marked in the middle of the column by a line across it, as long as the space is tall.
     'main .space { position: relative; cursor: pointer; }' +
-    'main .space::after { content: ""; position: absolute; top: 0; right: 0; height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
+    'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
     // Under the pointer, or picked, the line gives way to the space's height in pixels.
-    'main .space:hover::after, main .space:focus::after { background: none; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; letter-spacing: -0.05em; color: var(--text); }' +
+    'main .space:hover::after, main .space:focus::after { background: none; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--text); }' +
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    '.edit-case { position: absolute; right: 0; bottom: 100%; display: flex; align-items: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; letter-spacing: -0.05em; text-transform: uppercase; color: var(--muted); }' +
+    '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case span { min-width: 1ch; outline: none; cursor: text; }' +
     '.edit-case span:focus { color: var(--text); }' +
+    // Over the anchor, 8px above it: + ↑ ↓ under the pointer, × while it is typed into.
+    '.edit-case .edit-tools { left: 50%; top: calc(50% - 32px); transform: translate(-50%, -50%); text-transform: none; }' +
+    '.edit-case:hover:not(:focus-within) .edit-tools.moves, .edit-case:focus-within .edit-tools.off { display: flex; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -408,13 +420,98 @@
     linkField.style.top = rect.top - 8 - linkField.getBoundingClientRect().height + 'px'
     linkField.focus()
     linkField.select()
+    // × at the field's end takes an existing link off.
+    linkOff.hidden = !link
+    var field = linkField.getBoundingClientRect()
+    linkOff.style.left = field.right - 32 + 'px'
+    linkOff.style.top = field.top + 'px'
+    linkOff.style.height = field.height + 'px'
+    suggest()
   }
+
+  var linkOff = document.createElement('button')
+  linkOff.className = 'edit-link-off'
+  linkOff.textContent = '×'
+  linkOff.hidden = true
+  linkOff.addEventListener('pointerdown', function (e) { e.preventDefault() })
+  linkOff.addEventListener('mousedown', function (e) { e.preventDefault() })
+  linkOff.addEventListener('click', function () {
+    linkField.value = ''
+    closeLink(true)
+  })
+  document.body.appendChild(linkOff)
+
+  // Typing / offers the site's pages and their projects, # the projects of this page; ↑ ↓ pick one, Enter or a click takes
+  // it. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
+  var PAGES = [['/', 'Главная'], ['/cases/', 'Проекты']]
+  var suggestions = document.createElement('div')
+  suggestions.className = 'edit-suggest'
+  suggestions.hidden = true
+  suggestions.addEventListener('pointerdown', function (e) { e.preventDefault() })
+  suggestions.addEventListener('mousedown', function (e) { e.preventDefault() })
+  document.body.appendChild(suggestions)
+  var known = null, picked = 0
+  function relative(path) {
+    var here = location.pathname.replace(/[^/]*$/, ''), page = path.split('#')[0], hash = path.slice(page.length)
+    if (page === here) return hash || './'
+    if (page.indexOf(here) === 0) return page.slice(here.length) + hash
+    return '../'.repeat(here.split('/').length - page.split('/').length) + page.replace(/^\//, '') + hash
+  }
+  // Every page with its projects' anchors and titles, read once.
+  function loadKnown() {
+    if (known) return Promise.resolve(known)
+    return Promise.all(PAGES.map(function (page) {
+      return fetch(page[0]).then(function (r) { return r.text() }).then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html')
+        var list = [[page[0], page[1]]]
+        Array.prototype.forEach.call(doc.querySelectorAll('main article[id]'), function (a) {
+          var title = a.querySelector('h1, h2')
+          list.push([page[0] + '#' + a.id, title ? title.textContent.trim() : ''])
+        })
+        return list
+      })
+    })).then(function (lists) { return (known = [].concat.apply([], lists)) })
+  }
+  function suggest() {
+    var typed = linkField.value.trim()
+    suggestions.hidden = true
+    if (!asking || asking.kind !== 'link' || !/^[\/#]/.test(typed)) return
+    loadKnown().then(function (all) {
+      var here = location.pathname.replace(/[^/]*$/, '')
+      var list = all.filter(function (s) {
+        return typed[0] === '#' ? s[0].indexOf(here + '#') === 0 && s[0].slice(here.length).indexOf(typed) === 0 : s[0].indexOf(typed) === 0
+      })
+      suggestions.textContent = ''
+      picked = 0
+      list.forEach(function (s, k) {
+        var b = document.createElement('button'), grey = document.createElement('span')
+        b.textContent = typed[0] === '#' ? s[0].slice(here.length) : s[0]
+        grey.textContent = '  ' + s[1]
+        b.appendChild(grey)
+        b.dataset.href = relative(s[0])
+        b.classList.toggle('on', k === 0)
+        b.addEventListener('click', function () { take(b) })
+        suggestions.appendChild(b)
+      })
+      var field = linkField.getBoundingClientRect()
+      suggestions.hidden = !list.length || linkField.hidden
+      suggestions.style.left = field.left + 'px'
+      suggestions.style.top = field.bottom + 8 + 'px'
+    })
+  }
+  function take(b) {
+    linkField.value = b.dataset.href
+    closeLink(true)
+  }
+  linkField.addEventListener('input', suggest)
 
   function closeLink(apply) {
     var l = asking
     if (!l) return
     asking = null
     linkField.hidden = true
+    linkOff.hidden = true
+    suggestions.hidden = true
     l.block.focus()
     if (apply) {
       var typed = linkField.value.trim()
@@ -426,6 +523,13 @@
   }
 
   linkField.addEventListener('keydown', function (e) {
+    var rows = suggestions.hidden ? [] : suggestions.children
+    if (rows.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault()
+      picked = (picked + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length
+      Array.prototype.forEach.call(rows, function (b, k) { b.classList.toggle('on', k === picked) })
+    }
+    if (e.key === 'Enter' && rows.length) { e.preventDefault(); return take(rows[picked]) }
     if (e.key === 'Enter') { e.preventDefault(); closeLink(true) }
     if (e.key === 'Escape') { e.preventDefault(); closeLink(false) }
   })
@@ -566,7 +670,7 @@
     var rect = current.getBoundingClientRect(), ring = 4 // the peach shape reaches 4px past the text on either side
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
-    var left = isSpace(current) ? rect.right + ring - size.width : rect.left - ring
+    var left = isSpace(current) ? rect.left + (rect.width - size.width) / 2 : rect.left - ring
     left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
     var top = rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
@@ -719,14 +823,8 @@
     placeControls()
   }
 
-  // A block swaps places with its neighbour in the same group; a project title takes the whole project along.
+  // A block swaps places with its neighbour in the same group; whole projects move by the arrows over their anchors.
   function move(el, dir) {
-    var article = el.closest('article')
-    if (article && el.tagName === 'H2' && article.querySelector('h2') === el) {
-      var neighbour = dir < 0 ? article.previousElementSibling : article.nextElementSibling
-      if (!neighbour || neighbour.tagName !== 'ARTICLE') return
-      return structural({ op: 'moveProject', id: article.id, dir: dir }, { selector: '#' + article.id + ' h2' })
-    }
     // A text block passes over the spaces next to it to the next text block; the spaces stay in place and don't move.
     if (isSpace(el)) return
     var i = blocks.indexOf(el), j = i + dir
@@ -774,18 +872,33 @@
     hideControls()
     el.remove()
   }
-  // A project's anchor (the resume links to projects by it) stands in the gap above the project, at the column's right
-  // edge, in grey capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, and the links
-  // to it on this page and the other one follow; Escape brings the old one back; an empty one takes it off, along with
-  // the project's line in the project list.
+  // A project's anchor (the resume links to projects by it) stands in the middle of the gap above the project, in grey
+  // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
+  // follow; Escape brings the old one back; an empty one takes it off, along with the project's line in the project list.
+  // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
+  // other page; while it is typed into: × takes the project off this page.
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
     id.contentEditable = 'plaintext-only'
     id.spellcheck = false
     id.textContent = article.id
-    tag.append('#', id)
+    tag.append('#', id, caseTools('moves', [['+', function () {
+      gone()
+      structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
+    }], ['↑', function () { moveCase(-1) }], ['↓', function () { moveCase(1) }]]), caseTools('off', [['×', function () {
+      gone()
+      structural({ op: 'removeProject', article: n, before: article.id }, null)
+    }]]))
     article.prepend(tag)
+    function moveCase(dir) {
+      var to = n + dir
+      if (to < 0 || to >= document.querySelectorAll('main article').length) return
+      gone()
+      structural({ op: 'moveProject', article: n, before: article.id, dir: dir }, null)
+    }
+    // Once the project is on its way out, leaving its anchor changes nothing more.
+    function gone() { id.dataset.gone = '1' }
     // The anchor's typing is not the page's text: it neither saves the blocks nor holds the page open.
     id.addEventListener('input', function (e) { e.stopPropagation() })
     id.addEventListener('keydown', function (e) {
@@ -793,6 +906,7 @@
       if (e.key === 'Escape') { e.preventDefault(); id.textContent = article.id; id.blur() }
     })
     id.addEventListener('blur', function () {
+      if (id.dataset.gone) return
       var typed = id.textContent.trim().replace(/^#/, '').toLowerCase()
       if (typed === article.id) return (id.textContent = article.id)
       if (typed && (!/^[a-z0-9-]+$/.test(typed) || document.getElementById(typed))) {
@@ -804,6 +918,28 @@
     })
     return { article: article, tag: tag }
   })
+  function caseTools(kind, items) {
+    var bar = document.createElement('div')
+    bar.className = 'edit-tools ' + kind
+    items.forEach(function (item) {
+      var b = document.createElement('button')
+      b.textContent = item[0]
+      b.addEventListener('pointerdown', function (e) { e.preventDefault() })
+      b.addEventListener('mousedown', function (e) { e.preventDefault() })
+      b.addEventListener('click', item[1])
+      var span = document.createElement('span')
+      span.appendChild(b)
+      bar.appendChild(span)
+    })
+    return bar
+  }
+  // A new project's anchor until it gets its own: case, case-2…
+  function freeAnchor() {
+    for (var k = 1; ; k++) {
+      var name = k === 1 ? 'case' : 'case-' + k
+      if (!document.getElementById(name)) return name
+    }
+  }
   // Each anchor is as tall as the gap above its project, its text in the middle.
   function placeCases() {
     cases.forEach(function (c) { c.tag.style.height = getComputedStyle(c.article).marginTop })
@@ -949,7 +1085,14 @@
     } catch (e) {}
     if (!back || back.path !== location.pathname) return
     scrollTo(0, back.y)
-    var f = back.focus, el = f && (f.selector ? document.querySelector(f.selector) : blocks[f.index])
+    var f = back.focus
+    // A new or moved project: its anchor, selected to type over.
+    if (f && f.anchor !== undefined && cases[f.anchor]) {
+      var id = cases[f.anchor].tag.querySelector('span')
+      id.focus()
+      return selectAll(id)
+    }
+    var el = f && (f.selector ? document.querySelector(f.selector) : blocks[f.index])
     if (!el || blocks.indexOf(el) < 0) return
     el.focus()
     if (f.select) selectAll(el)

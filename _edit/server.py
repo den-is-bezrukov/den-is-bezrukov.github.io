@@ -31,8 +31,23 @@ undone, redone, written = {}, {}, {}
 
 PROJECT = '''<article id="{id}">
 {i}  <h2>Новый проект</h2>
+{i}  <div class="space space-150"></div>
 {i}  <p class="meta">Клиент · роль · год</p>
+{i}  <div class="space space-150"></div>
 {i}  <p>Что это за проект и что я в нём сделал.</p>
+{i}  <div class="space space-150"></div>
+{i}  <p class="meta">Роль: Денис Безруков</p>
+{i}</article>'''
+# A full case in cases/: its title is the page's H1, its text goes in sections.
+CASE = '''<article id="{id}">
+{i}  <h1>Новый проект</h1>
+{i}  <div class="space space-200"></div>
+{i}  <p class="meta">Клиент · роль · год</p>
+{i}  <div class="space space-300"></div>
+{i}  <h3>Роль</h3>
+{i}  <div class="space space-150"></div>
+{i}  <p>Что я делал в проекте.</p>
+{i}  <div class="space space-150"></div>
 {i}  <p class="meta">Роль: Денис Безруков</p>
 {i}</article>'''
 
@@ -196,8 +211,57 @@ def apply(source, edit, spans, articles):
             raise Refused('not empty')
         _, indent = line_start(source, a1)
         return source[:a1] + PROJECT.format(id=id, i=indent) + source[a2:]
+    if op == 'insertProject':
+        # A new project from the template, in place of the one at edit['article'], which goes down one; its line in the
+        # project list goes before that one's.
+        id = edit['id']
+        if not re.fullmatch(r'[a-z0-9-]+', id) or 'id="%s"' % id in source:
+            raise Refused('bad anchor')
+        here = articles[edit['article']]
+        if (here[0] or '') != (edit.get('before') or ''):
+            raise Refused('changed')
+        _, indent = line_start(source, here[1])
+        template = CASE if '<main class="inner">' in source else PROJECT
+        source = source[:here[1]] + template.format(id=id, i=indent) + '\n\n' + indent + source[here[1]:]
+        try:
+            start, end = project_row(source)
+        except Refused:
+            return source
+        row = source[start:end]
+        new = '<span><a href="#%s">Новый проект</a></span><wbr>' % id
+        m = entry(row, here[0] or '') if here[0] else None
+        row = row[:m.start()] + new + row[m.start():] if m else re.sub(r'(</span>\s*</p>)$', '<wbr>' + new[:-len('<wbr>')] + r'\1', row)
+        return source[:start] + row + source[end:]
+    if op == 'removeProject':
+        # The project goes from this page, with its line in the project list; the other page keeps its own.
+        k = edit['article']
+        id, a1, a2 = articles[k]
+        if (id or '') != (edit.get('before') or ''):
+            raise Refused('changed')
+        cut = a1
+        while cut and source[cut - 1] in ' \t\n':
+            cut -= 1
+        source = source[:cut] + source[a2:]
+        if not id:
+            return source
+        try:
+            start, end = project_row(source)
+        except Refused:
+            return source
+        row = source[start:end]
+        m = entry(row, id)
+        if m:
+            s1, s2 = m.span()
+            if row[:s1].endswith('<wbr>'):
+                s1 -= len('<wbr>')
+            elif row[s2:].startswith('<wbr>'):
+                s2 += len('<wbr>')
+            row = row[:s1] + row[s2:]
+        return source[:start] + row + source[end:]
     if op == 'moveProject':
-        k = next(n for n, a in enumerate(articles) if a[0] == edit['id'])
+        k = edit['article'] if 'article' in edit else next(n for n, a in enumerate(articles) if a[0] == edit['id'])
+        if (articles[k][0] or '') != (edit.get('before', articles[k][0]) or ''):
+            raise Refused('changed')
         j = k + edit['dir']
         if not 0 <= j < len(articles):
             return source
@@ -208,7 +272,7 @@ def apply(source, edit, spans, articles):
         except Refused:
             return source
         row = source[start:end]
-        x, y = entry(row, articles[k][0]), entry(row, articles[j][0])
+        x, y = [articles[n][0] and entry(row, articles[n][0]) for n in (k, j)]
         if x and y:
             (x1, x2), (y1, y2) = sorted([x.span(), y.span()])
             row = row[:x1] + row[y1:y2] + row[x2:y1] + row[x1:x2] + row[y2:]
@@ -327,6 +391,43 @@ def relink_others(path, old, new):
             write(other, result)
 
 
+def sync_order(path):
+    """The projects of the other page follow this page's order, and so does its project list."""
+    with open(path, encoding='utf-8') as f:
+        order = [a[0] for a in Blocks(f.read()).articles if a[0]]
+    for page in pages():
+        other = os.path.join(ROOT, page)
+        if other == path:
+            continue
+        with open(other, encoding='utf-8') as f:
+            source = f.read()
+        result = source
+        found = [(a[1], a[2], a[0]) for a in Blocks(result).articles if a[0] in order]
+        result = swap_in_order(result, found, order)
+        try:
+            start, end = project_row(result)
+            row = result[start:end]
+            items = [(m.start(), m.end(), m.group(1)) for m in re.finditer(r'<span><a href="[^"]*#([a-z0-9-]+)">.*?</a></span>', row, re.S)]
+            result = result[:start] + swap_in_order(row, items, order) + result[end:]
+        except Refused:
+            pass
+        if result != source:
+            snapshot(other, source)
+            undone.setdefault(other, []).append(source)
+            redone[other] = []
+            write(other, result)
+
+
+def swap_in_order(source, found, order):
+    """The spans found (start, end, id) swapped around so their ids come in the given order, each keeping its slot."""
+    shared = [f for f in found if f[2] in order]
+    wanted = sorted(shared, key=lambda f: order.index(f[2]))
+    texts = [source[f[0]:f[1]] for f in wanted]
+    for slot, text in reversed(list(zip(shared, texts))):
+        source = source[:slot[0]] + text + source[slot[1]:]
+    return source
+
+
 def page_file(url):
     """The .html file a URL shows (a folder shows its index.html), or None outside the site."""
     path = os.path.normpath(os.path.join(ROOT, url.split('?')[0].lstrip('/')))
@@ -405,6 +506,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 for edit in edits:
                     if edit.get('op') == 'renameAnchor' and edit.get('before'):
                         relink_others(path, edit['before'], edit['id'])
+                    if edit.get('op') == 'moveProject':
+                        sync_order(path)
                 return self.send_body('{"ok": true}', 'application/json')
             # Undo and redo only step through the editor's own writes; a file changed from outside stops them.
             back, forth = (undone, redone) if action == '/undo' else (redone, undone)
