@@ -14,9 +14,9 @@
     '@font-face { font-family: "Geist Mono"; src: url("/_edit/GeistMonoVariable.woff2") format("woff2"); font-weight: 100 900; }' +
     // In edit mode the page stands on #fafafa, so the white toolbar sits a step above it.
     ':root { --bg: #fafafa; }' +
-    // The block being edited is marked by a peach shape under its lines (drawn by mark()), not by a box around it.
+    // The block being edited is marked by a light grey shape under its lines (drawn by mark()), not by a box around it.
     '[contenteditable]:focus { outline: none; }' +
-    '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #ffeedd; }' +
+    '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #f0f0f0; }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 13px/1 "Geist Mono", ui-monospace, monospace; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
     // The floating panels are white, a step lighter than the page's #fafafa.
