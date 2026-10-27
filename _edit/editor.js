@@ -1109,6 +1109,7 @@
       // A list or a row of links isn't cut: ⇧⌘Enter there adds a paragraph below, as ⌘Enter does.
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && !fixed(el) && el.tagName !== 'UL') split(el)
       else if (e.metaKey || e.ctrlKey) addParagraph(el)
+      else if (el.classList.contains('list') && rowItem(el)) cutItem(el, rowItem(el), true)
       else if (fixed(el)) return
       else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
       else lineBreak()
@@ -1173,6 +1174,24 @@
     if (e.data === ' ' && atItemStart(item)) return e.preventDefault()
     if (e.data.indexOf('·') < 0) return
     e.preventDefault()
+    cutItem(el, item, false)
+  })
+  // Cuts the item at the caret: after a dot into two items side by side, after Enter onto two lines. Enter at an item's
+  // start or end only breaks the line between it and its neighbour.
+  function cutItem(el, item, newLine) {
+    if (newLine) {
+      var atStart = atItemStart(item), after = document.createRange(), sel = getSelection()
+      after.setStart(sel.anchorNode, sel.anchorOffset)
+      after.setEnd(item, item.childNodes.length)
+      var atEnd = !after.toString().replace(/\u200b/g, '')
+      if (atStart || atEnd) {
+        var side = atStart ? item.previousSibling : item.nextSibling
+        if (!side || side.nodeName === 'BR') return
+        if (side.nodeName === 'WBR') side.replaceWith(document.createElement('br'))
+        else (atStart ? item.before : item.after).call(item, document.createElement('br'))
+        return el.dispatchEvent(new Event('input', { bubbles: true }))
+      }
+    }
     var range = getSelection().getRangeAt(0)
     range.deleteContents()
     var tail = document.createRange()
@@ -1186,7 +1205,7 @@
       next.textContent = '\u200b'
       text = next.firstChild
     }
-    item.after(document.createElement('wbr'), next)
+    item.after(document.createElement(newLine ? 'br' : 'wbr'), next)
     // No space around the dot: the item before ends at its last letter, the next starts at its first.
     var last = item.lastChild
     while (last && last.nodeType === 1) last = last.lastChild
@@ -1194,7 +1213,7 @@
     if (text.nodeValue !== '\u200b') text.nodeValue = text.nodeValue.replace(/^\s+/, '')
     caret(text, text.nodeValue === '\u200b' ? 1 : 0)
     el.dispatchEvent(new Event('input', { bubbles: true }))
-  })
+  }
   function atItemStart(item) {
     var sel = getSelection(), before = document.createRange()
     before.setStart(item, 0)
@@ -1204,6 +1223,12 @@
   function joinItems(el) {
     var item = rowItem(el), sel = getSelection()
     if (!item || !sel.isCollapsed || !atItemStart(item)) return false
+    // Right after a line break, Backspace takes the break off: the two items stand side by side again.
+    if (item.previousElementSibling && item.previousElementSibling.tagName === 'BR') {
+      item.previousElementSibling.replaceWith(document.createElement('wbr'))
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      return true
+    }
     var prev = item.previousElementSibling
     while (prev && prev.tagName === 'WBR') prev = prev.previousElementSibling
     if (!prev || prev.tagName !== 'SPAN') return false
