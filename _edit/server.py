@@ -235,7 +235,7 @@ def apply(source, edit, spans, articles):
     if op == 'caseGap':
         # The gap between projects on this page, one for all of them: a class on <main>, none for the usual 800.
         size = str(edit.get('size'))
-        if size not in ('300', '400', '500', '600', '800'):
+        if size not in ('300', '400', '500', '600', '800', '900', '1000'):
             raise Refused('bad gap')
         m = re.search(r'<main\b[^>]*>', source)
         tag = re.sub(r'\sclass="[^"]*"', lambda c: re.sub(r'\s*\bgap-\d+', '', c.group(0)).replace(' class=""', ''), m.group(0))

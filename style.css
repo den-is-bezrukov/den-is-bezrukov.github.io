@@ -20,6 +20,8 @@
   --space-500: 5rem;
   --space-600: 6rem;
   --space-800: 8rem;
+  --space-900: 9rem;
+  --space-1000: 10rem;
   --bg: #fafafa;
   --text: #000000;
   /* Two colours only: black text (90% white in the dark theme) on a ground of #fafafa, LoveFrom's, and a grey, #999999, the text colour at 65% in the dark theme. */
@@ -94,13 +96,15 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .list .row { display: block; text-wrap: balance; margin-left: -0.9em; clip-path: inset(-1em -1em -1em 0.9em); }
 .list .row > span { white-space: nowrap; }
 .list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
-/* Projects stand one gap apart, the same all down a page: 800 unless the page's main says otherwise (gap-300 … gap-600,
+/* Projects stand one gap apart, the same all down a page: 800 unless the page's main says otherwise (gap-300 … gap-1000,
    set in edit mode). On phones the gap is a quarter less. */
 main { --case-gap: var(--space-800); }
 main.gap-300 { --case-gap: var(--space-300); }
 main.gap-400 { --case-gap: var(--space-400); }
 main.gap-500 { --case-gap: var(--space-500); }
 main.gap-600 { --case-gap: var(--space-600); }
+main.gap-900 { --case-gap: var(--space-900); }
+main.gap-1000 { --case-gap: var(--space-1000); }
 article { margin-top: var(--case-gap); scroll-margin-top: var(--case-gap); }
 .inner header + article { margin-top: var(--space-300); }
 /* The page ends on a link to all the projects, as far below the last project as projects stand apart. */
