@@ -70,6 +70,8 @@
     '.edit-case:focus-within .edit-case-acts { display: flex; }' +
     '.edit-case-acts button { all: unset; text-transform: none; cursor: pointer; }' +
     '.edit-case-acts button:hover { color: var(--text); }' +
+    // ╳ is a box-drawing glyph, a cell of 0.6 by 1.2 em; squeezed into a square as tall as a capital it sits with the words.
+    '.edit-case-acts button:last-child { display: inline-block; transform: scale(1.1667, 0.5833); }' +
     // A project hidden from the site stays in the editor, faint, with its line in the project list.
     'main article[hidden] { display: block; }' +
     'main article[hidden] > :not(.edit-case), main .list .row > span[hidden] { opacity: 0.3; }' +
