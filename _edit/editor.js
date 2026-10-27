@@ -1061,9 +1061,9 @@
   // other page; while it is typed into: Hide (or Show) takes it off the site or puts it back, ╳ takes it off this page.
   // The first project has no ↑, the last no ↓.
   var total = document.querySelectorAll('main article').length
-  // The gap between projects: 48 to 160px, the classes gap-300 … gap-1000 on <main>, none for the usual 800.
+  // The gap between projects: 80 to 160px, the classes gap-500 … gap-1000 on <main>, none for the usual 800.
   var main = document.querySelector('main')
-  var GAPS = [['300', '48'], ['400', '64'], ['500', '80'], ['600', '96'], ['800', '128'], ['900', '144'], ['1000', '160']]
+  var GAPS = [['500', '80'], ['600', '96'], ['800', '128'], ['900', '144'], ['1000', '160']]
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
