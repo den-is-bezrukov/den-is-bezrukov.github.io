@@ -716,9 +716,12 @@
   }
   // Selecting words or dropping the selection switches the toolbar between LINK and the rest.
   var wasSelected = false
+  // While words stay selected, the toolbar follows the selection.
   document.addEventListener('selectionchange', function () {
-    if (!current || !tools.classList.contains('shown') || selected() === wasSelected) return
-    wasSelected = selected()
+    if (!current || !tools.classList.contains('shown')) return
+    var words = selected()
+    if (words === wasSelected && !words) return
+    wasSelected = words
     render()
     placeControls()
   })
@@ -733,6 +736,15 @@
     // The toolbar stands right on a text block's first line; a picked space's toolbar covers its middle, where its height
     // shows, since the toolbar names the height too.
     var top = isSpace(current) ? rect.top + (rect.height - size.height) / 2 : rect.top - size.height
+    // With words selected, BOLD | LINK stand right on the line of the first selected word, its left edge 4px before it.
+    if (selected()) {
+      var word = getSelection().getRangeAt(0).getClientRects()[0]
+      if (word) {
+        var lh = parseFloat(getComputedStyle(current).lineHeight) || word.height
+        left = Math.max(8, Math.min(word.left - ring, document.documentElement.clientWidth - size.width - 8))
+        top = word.top - (lh - word.height) / 2 - size.height
+      }
+    }
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
