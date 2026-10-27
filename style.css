@@ -83,7 +83,7 @@ a {
   text-underline-offset: 30%;
 }
 /* Link rows, breadcrumbs and a linked title read as navigation: no underline until hover. Links in the text keep it. */
-.list a, .crumbs a, h2 a { text-decoration-color: transparent; }
+.list a, .crumbs a, h2 a, footer a { text-decoration-color: transparent; }
 /* On hover the underline darkens to 50% of the link colour, still lighter than the letters. */
 a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
 .nw { white-space: nowrap; }
@@ -96,9 +96,12 @@ a:hover { text-decoration-color: color-mix(in srgb, currentColor 50%, transparen
 .list .row > span::before { content: "·"; display: inline-block; width: 0.9em; text-align: center; }
 article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
 .inner header + article { margin-top: var(--space-300); }
+/* The page ends on a link to all the projects, as far below the last project as projects stand apart. */
+main > footer { margin-top: var(--space-800); }
 @media (max-width: 480px) {
   main { padding: var(--space-400) var(--space-100); }
   article { margin-top: var(--space-600); scroll-margin-top: var(--space-600); }
+  main > footer { margin-top: var(--space-600); }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
@@ -125,7 +128,7 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
   .space-600 { height: 3rem; }
   /* On paper the project list under the summary and the link to this very PDF lead nowhere: they go. The projects
      start a step further from the summary than from one another. */
-  .about .space, .about .list, .list .row > span:has(a[href$=".pdf"]) { display: none; }
+  .about .space, .about .list, .list .row > span:has(a[href$=".pdf"]), main > footer { display: none; }
   .about + article { margin-top: var(--space-400); }
   /* A row of links runs on one line on paper: the page is wide enough, so its hand-set breaks are dropped. */
   .list .row br { display: none; }
