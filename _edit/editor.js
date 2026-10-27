@@ -377,10 +377,14 @@
   document.body.appendChild(linkField)
   var asking = null
 
+  // What was typed or pasted as a link's address: an e-mail gets mailto:, a phone number tel: (digits only), a bare site
+  // https://; anything else that isn't an address gives ''.
   function address(text) {
     text = text.trim()
+    if (/^\+?[\d\s()-]{7,}$/.test(text) && (text.match(/\d/g) || []).length >= 7) return 'tel:' + text.replace(/[^\d+]/g, '')
     if (!text || /\s/.test(text)) return ''
     if (/^([a-z]+:|\/|#)/i.test(text)) return text
+    if (/^[^@\/]+@[^@\/]+\.[a-zа-яё]{2,}$/i.test(text)) return 'mailto:' + text
     return /^[^.\/]+\.[a-zа-яё]{2,}/i.test(text) ? 'https://' + text : ''
   }
 
