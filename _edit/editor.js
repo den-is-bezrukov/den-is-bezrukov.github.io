@@ -49,12 +49,12 @@
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
     'main .space:focus { outline: none; }' +
-    // Every space is marked in the middle of the column by a line across it, as long as the space is tall.
+    // Every space is marked in the middle of the column by a 24px line across it.
     'main .space { position: relative; cursor: pointer; }' +
-    'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
+    'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; width: 24px; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
     // Under the pointer, or picked, the space is drawn as its edges across the column, its height in pixels in the middle.
     'main .space:hover, main .space:focus { box-shadow: inset 0 1px rgba(0, 0, 0, 0.1), inset 0 -1px rgba(0, 0, 0, 0.1); }' +
-    'main .space:hover::after, main .space:focus::after { top: 50%; height: auto; aspect-ratio: auto; transform: translate(-50%, -50%); background: none; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); }' +
+    'main .space:hover::after, main .space:focus::after { top: 50%; height: auto; width: auto; transform: translate(-50%, -50%); background: none; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); }' +
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
