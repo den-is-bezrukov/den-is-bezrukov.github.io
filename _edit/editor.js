@@ -699,9 +699,9 @@
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = isSpace(current) ? rect.left + (rect.width - size.width) / 2 : rect.left - ring
     left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
-    // The toolbar stands right on the block's top: on a text block's first line, on a space's top edge (so it stays put
-    // whatever the space's height).
-    var top = rect.top - size.height
+    // The toolbar stands right on a text block's first line; a picked space's toolbar covers its middle, where its height
+    // shows, since the toolbar names the height too.
+    var top = isSpace(current) ? rect.top + (rect.height - size.height) / 2 : rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
