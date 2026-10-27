@@ -52,8 +52,8 @@
     // Every space is marked in the middle of the column by a line across it, as long as the space is tall.
     'main .space { position: relative; cursor: pointer; }' +
     'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
-    // Under the pointer, or picked, the line gives way to the space's height in pixels.
-    'main .space:hover::after, main .space:focus::after { background: none; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--text); }' +
+    // Under the pointer, or picked, the line gives way to the space's height in pixels on a light grey tag in its middle.
+    'main .space:hover::after, main .space:focus::after { top: 50%; height: 16px; min-width: 40px; aspect-ratio: auto; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; border-radius: 4px; background: #f0f0f0; font: 500 12px/1 "Geist Mono", ui-monospace, monospace; color: var(--text); }' +
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
