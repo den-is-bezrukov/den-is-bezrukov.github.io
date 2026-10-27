@@ -499,9 +499,9 @@
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }
-  // The block's line layout, named as it is now: prtt (pretty) as the site lays out text everywhere, blnc (balance) with
-  // lines of nearly equal length (the balance class, on the site too); a press switches to the other.
-  var wrapButton = button('prtt', function (el) {
+  // even, a switch like list: on (black at 600), the block's lines come out nearly equal in length (the balance class, on
+  // the site too); off, the text fills its lines as everywhere on the site.
+  var wrapButton = button('even', function (el) {
     el.classList.toggle('balance')
     render()
     placeControls()
@@ -534,7 +534,7 @@
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
     listGroup.firstChild.classList.toggle('on', now === 'ul')
-    label(wrapButton, current.classList.contains('balance') ? 'blnc' : 'prtt')
+    wrapButton.classList.toggle('on', current.classList.contains('balance'))
   }
   // Selecting words or dropping the selection switches the toolbar between LINK and the rest.
   var wasSelected = false
