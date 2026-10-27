@@ -35,11 +35,11 @@
     // so the pointer goes straight from one to the next. Labels are grey capitals, the current style black at 600; in the
     // style group a two-letter label (H1) takes 20px, a four-letter one (BODY) 40px at least.
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; text-transform: uppercase; color: var(--muted); }' +
-    '.edit-tools button[data-style]:not([data-style="ul"]) { min-width: 48px; }' +
-    '.edit-tools button[data-style^="h"]:not([data-style="ul"]) { min-width: 0; width: 28px; }' +
+    '.edit-tools button[data-style] { min-width: 48px; }' +
+    '.edit-tools button[data-style^="h"] { min-width: 0; width: 28px; }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
-    '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; border-right: 0.5px solid rgba(0, 0, 0, 0.1); }' +
-    '.edit-tools span:last-child { border-right: 0; }' +
+    '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; }' +
+    '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 0.5px solid rgba(0, 0, 0, 0.1); }' +
     '.edit-tools span[hidden] { display: none; }' +
     '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 4px; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
@@ -436,7 +436,7 @@
   // The toolbar sits above the block with the caret, 8px off its highlight, left edge on the highlight's left edge, and follows
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
-  var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['ul', 'ul', '']]
+  var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['list', 'ul', '']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
@@ -476,10 +476,9 @@
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
-  // # adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
-  // is out for now.
-  if (!home) group([button('#', addSection)])
-  // ul, the list, works as a switch: pressed on a list, it turns the list back into body; it stands in a group of its own.
+  // With words selected the toolbar holds only LINK, which links them as ⌘K does.
+  var linkGroup = group([button('link', openLink)])
+  // list works as a switch: pressed on a list, it turns the list back into body; it stands in a group of its own.
   var styleGroup = group(styles.filter(function (s) { return s[1] !== 'ul' }).map(styleButton))
   var listGroup = group([styleButton(STYLES[6])])
   function styleButton(s) {
@@ -490,29 +489,44 @@
     b.dataset.style = s[1] + (s[2] ? '.' + s[2] : '')
     return b
   }
-  // a links the selected words, as ⌘K does.
-  var linkGroup = group([button('a', openLink)])
-  // The block's line layout, named as it is now: pretty as the site lays out text everywhere, balance with lines of nearly
-  // equal length (the balance class, on the site too); a press switches to the other.
-  var wrapButton = button('pretty', function (el) {
+  // The block's line layout, named as it is now: prtt (pretty) as the site lays out text everywhere, blnc (balance) with
+  // lines of nearly equal length (the balance class, on the site too); a press switches to the other.
+  var wrapButton = button('prtt', function (el) {
     el.classList.toggle('balance')
     render()
     placeControls()
     save()
   })
-  group([wrapButton])
-  group([button('↑', function (el) { move(el, -1) })])
-  group([button('↓', function (el) { move(el, 1) })])
+  var wrapGroup = group([wrapButton])
+  // # adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
+  // is out for now.
+  var sectionGroup = group([button('#', addSection)])
+  var moveGroups = [group([button('↑', function (el) { move(el, -1) })]), group([button('↓', function (el) { move(el, 1) })])]
 
-
+  function selected() {
+    var sel = getSelection()
+    return !!current && sel.rangeCount > 0 && !sel.isCollapsed && current.contains(sel.anchorNode) && current.contains(sel.focusNode)
+  }
   function render() {
     if (!current) return
-    styleGroup.hidden = listGroup.hidden = linkGroup.hidden = fixed(current)
+    var words = selected()
+    linkGroup.hidden = !words
+    styleGroup.hidden = listGroup.hidden = words || fixed(current)
+    wrapGroup.hidden = moveGroups[0].hidden = moveGroups[1].hidden = words
+    sectionGroup.hidden = words || home
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
     listGroup.firstChild.classList.toggle('on', now === 'ul')
-    label(wrapButton, current.classList.contains('balance') ? 'balance' : 'pretty')
+    label(wrapButton, current.classList.contains('balance') ? 'blnc' : 'prtt')
   }
+  // Selecting words or dropping the selection switches the toolbar between LINK and the rest.
+  var wasSelected = false
+  document.addEventListener('selectionchange', function () {
+    if (!current || !tools.classList.contains('shown') || selected() === wasSelected) return
+    wasSelected = selected()
+    render()
+    placeControls()
+  })
   function placeControls() {
     if (!current) return
     mark()
