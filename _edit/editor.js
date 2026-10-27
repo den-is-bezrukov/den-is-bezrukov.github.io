@@ -898,7 +898,7 @@
   }
   // A project's anchor (the resume links to projects by it) stands at the bottom of the gap above the project, in grey
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
-  // follow; Escape brings the old one back; an empty one takes it off, along with the project's line in the project list.
+  // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
   // other page; while it is typed into: × takes the project off this page.
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
@@ -935,12 +935,12 @@
     id.addEventListener('blur', function () {
       if (id.dataset.gone) return
       var typed = id.textContent.trim().replace(/^#/, '').toLowerCase()
-      if (typed === article.id) return (id.textContent = article.id)
+      // Left empty, or unchanged, the anchor stays as it was: a project never goes without one.
+      if (!typed || typed === article.id) return (id.textContent = article.id)
       if (typed && (!/^[a-z0-9-]+$/.test(typed) || document.getElementById(typed))) {
         id.textContent = article.id
         return show('Такой якорь не подойдёт')
       }
-      if (!typed) return structural({ op: 'removeAnchor', id: article.id }, null)
       structural({ op: 'renameAnchor', article: n, before: article.id, id: typed }, null)
     })
     return { article: article, tag: tag }
