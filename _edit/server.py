@@ -19,6 +19,8 @@ from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITABLE = ('h1', 'h2', 'h3', 'p', 'ul')
+# Spaces between blocks: <div class="space space-300"></div>, 16 to 96px.
+SPACES = ('100', '200', '300', '400', '500', '600')
 PORT = 8765
 LOCK = threading.Lock()
 # Earlier versions of every page, also kept as files in _edit/history (not in git), the last 200 per page.
@@ -35,7 +37,7 @@ PROJECT = '''<article id="{id}">
 
 
 class Blocks(HTMLParser):
-    """Every h1, h2, h3, p and ul inside <main> in document order, as (tag name, where its start tag begins, where its inner HTML
+    """Every h1, h2, h3, p, ul and space inside <main> in document order, as (tag name, where its start tag begins, where its inner HTML
     begins and ends), and every <article> as (id, where it begins, where it ends)."""
 
     def __init__(self, source):
@@ -59,7 +61,7 @@ class Blocks(HTMLParser):
             self.in_main = True
         elif self.in_main and tag == 'article':
             self.article = (dict(attrs).get('id'), self.position())
-        elif self.in_main and tag in EDITABLE and self.open is None:
+        elif self.in_main and self.open is None and (tag in EDITABLE or tag == 'div' and 'space' in (dict(attrs).get('class') or '').split()):
             start = self.position()
             self.open = (tag, start, start + len(self.get_starttag_text()))
 
@@ -204,6 +206,20 @@ def apply(source, edit, spans, articles):
         source = source[:close] + ''.join('\n' + indent + html for html in edit['blocks']) + source[close:]
     elif op == 'remove':
         source = source[:cut] + source[close:]
+    elif op == 'anchor':
+        # The block's own anchor: put on, changed, or taken off with an empty id.
+        id = edit.get('id') or ''
+        start_tag = re.sub(r'\sid="[^"]*"', '', source[tag:start])
+        if id:
+            if not re.fullmatch(r'[a-z0-9-]+', id) or re.search(r'\sid="%s"' % re.escape(id), source[:tag] + source[start:]):
+                raise Refused('bad anchor')
+            start_tag = start_tag[:1 + len(name)] + ' id="%s"' % id + start_tag[1 + len(name):]
+        source = source[:tag] + start_tag + source[start:]
+    elif op == 'space':
+        size = str(edit.get('size'))
+        if name != 'div' or size not in SPACES:
+            raise Refused('bad space')
+        source = source[:tag] + '<div class="space space-%s">' % size + source[start:]
     elif op == 'merge':
         _, _, prev_start, prev_end = spans[edit['index'] - 1]
         if source[prev_start:prev_end] != edit['prevBefore']:

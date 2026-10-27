@@ -16,6 +16,7 @@
   --space-200: 2rem;
   --space-300: 3rem;
   --space-400: 4rem;
+  --space-500: 5rem;
   --space-600: 6rem;
   --space-800: 8rem;
   --bg: #ffffff;
@@ -59,8 +60,14 @@ p.lead, .about p { margin-bottom: var(--space-100); }
 ul { margin: 0 0 var(--space-150); padding-left: var(--space-150); }
 li { text-wrap: pretty; }
 li + li { margin-top: var(--space-050); }
-/* Space: an empty block put between two others from edit mode, a group's step (space-300) more between them. */
-p.space { height: var(--space-300); margin: 0; }
+/* Space: an empty block put between two others from edit mode, 100 to 600 of the spacing scale more between them. */
+.space { margin: 0; }
+.space-100 { height: var(--space-100); }
+.space-200 { height: var(--space-200); }
+.space-300 { height: var(--space-300); }
+.space-400 { height: var(--space-400); }
+.space-500 { height: var(--space-500); }
+.space-600 { height: var(--space-600); }
 /* A block switched to Wrap: B in edit mode gets lines of nearly equal length. */
 .balance { text-wrap: balance; }
 strong { font-weight: 600; }

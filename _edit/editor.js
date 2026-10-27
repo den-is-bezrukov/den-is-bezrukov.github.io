@@ -4,7 +4,7 @@
 // A toolbar above the block with the caret adds a section or a project (#), switches the block's style and its line layout
 // (pretty, balance), links words (a) and moves it (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
-  var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p, main ul'))
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p, main ul, main div.space'))
   var source = window.EDIT_SOURCE
   if (blocks.length !== source.length) return alert('Не удалось сопоставить текст с файлом, режим правки выключен.')
 
@@ -45,9 +45,11 @@
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
     // Between two blocks under the pointer: a line across the column, SPACE on it at the right.
-    '.edit-gap { position: absolute; z-index: 1; display: none; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }' +
+    // It lies under the block's toolbar, SPACE centred on the line.
+    '.edit-gap { position: absolute; z-index: 0; display: none; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }' +
     '.edit-gap.shown { display: block; }' +
-    '.edit-gap .edit-tools { right: 0; bottom: 0; }' +
+    '.edit-gap .edit-tools { right: 0; top: 0.5px; transform: translateY(-50%); }' +
+    'main .space:focus { outline: none; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -111,8 +113,12 @@
   }
 
   function setup(el) {
-    el.contentEditable = 'plaintext-only'
-    el.spellcheck = true
+    // A space has no text to type into; it only takes focus, for its toolbar.
+    if (el.classList.contains('space')) el.tabIndex = 0
+    else {
+      el.contentEditable = 'plaintext-only'
+      el.spellcheck = true
+    }
     el.savedHtml = content(el)
     el.savedBalance = el.classList.contains('balance')
   }
@@ -441,6 +447,7 @@
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
   var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['list', 'ul', '']]
+  var SPACES = ['100', '200', '300', '400', '500', '600']
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
@@ -456,7 +463,6 @@
     return s[1] !== 'h3' || blocks.some(function (el) { return el.tagName === 'H3' })
   })
   styles.forEach(function (s) { offered[s[1] + (s[2] ? '.' + s[2] : '')] = true })
-  var home = !!document.querySelector('.about')
 
   var tools = document.createElement('div')
   tools.className = 'edit-tools'
@@ -502,9 +508,14 @@
     save()
   })
   var wrapGroup = group([wrapButton])
-  // # adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
-  // is out for now.
-  var sectionGroup = group([button('#', addSection)])
+  // A space's height, 100 to 600 of the spacing scale, in place of the styles.
+  var sizeGroup = group(SPACES.map(function (size) {
+    var b = button(size, function (el) { resize(el, size) })
+    b.dataset.size = size
+    return b
+  }))
+  // # opens the anchors: the block's own one to put on or change, and every anchor on the page.
+  var anchorGroup = group([button('#', askAnchor)])
   var moveGroups = [group([button('↑', function (el) { move(el, -1) })]), group([button('↓', function (el) { move(el, 1) })])]
 
   function selected() {
@@ -513,12 +524,13 @@
   }
   function render() {
     if (!current) return
-    var words = selected()
+    var words = selected(), space = current.classList.contains('space')
     linkGroup.hidden = !words
     styleGroup.hidden = listGroup.hidden = words || fixed(current)
-    wrapGroup.hidden = words || current.classList.contains('space')
+    wrapGroup.hidden = anchorGroup.hidden = words || space
+    sizeGroup.hidden = !space
     moveGroups[0].hidden = moveGroups[1].hidden = words
-    sectionGroup.hidden = words || home
+    Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
     listGroup.firstChild.classList.toggle('on', now === 'ul')
@@ -710,26 +722,6 @@
     placeControls()
   }
 
-  // # in a case puts a section heading and a paragraph after the block, the heading's text selected to type over.
-  function addSection(el) {
-    var i = blocks.indexOf(el)
-    save()
-    var h = document.createElement('h3'), p = document.createElement('p')
-    h.textContent = 'Новый раздел'
-    p.textContent = 'Текст.'
-    el.after(h, p)
-    setup(h)
-    setup(p)
-    send([{ op: 'insert', index: i, before: source[i], blocks: ['<h3>Новый раздел</h3>', '<p>Текст.</p>'] }])
-    source.splice(i + 1, 0, 'Новый раздел', 'Текст.')
-    blocks.splice(i + 1, 0, h, p)
-    current = h
-    h.focus()
-    selectAll(h)
-    render()
-    placeControls()
-  }
-
   // Spaces: the pointer in the gap between two blocks shows a line there with SPACE, which puts a space between them.
   var main = document.querySelector('main')
   var gap = document.createElement('div'), gapAt = -1
@@ -768,18 +760,29 @@
     hideGap()
   })
   document.addEventListener('mouseleave', hideGap)
+  // A new space is 300, a group's step, and takes the focus, so its toolbar offers the other heights.
   function addSpace(i) {
     save()
-    var p = document.createElement('p')
-    p.className = 'space'
-    blocks[i].after(p)
-    setup(p)
-    send([{ op: 'insert', index: i, before: source[i], blocks: ['<p class="space"></p>'] }])
+    var div = document.createElement('div')
+    div.className = 'space space-300'
+    blocks[i].after(div)
+    setup(div)
+    send([{ op: 'insert', index: i, before: source[i], blocks: ['<div class="space space-300"></div>'] }])
     source.splice(i + 1, 0, '')
-    blocks.splice(i + 1, 0, p)
+    blocks.splice(i + 1, 0, div)
     hideGap()
+    div.focus()
   }
-  // A space takes no text; Backspace or Delete in it takes it away.
+  function resize(el, size) {
+    var i = blocks.indexOf(el)
+    if (!el.classList.contains('space')) return
+    save()
+    send([{ op: 'space', index: i, before: source[i], size: size }])
+    el.className = 'space space-' + size
+    render()
+    placeControls()
+  }
+  // Backspace or Delete on a space takes it away.
   function removeSpace(el) {
     var i = blocks.indexOf(el)
     save()
@@ -790,33 +793,25 @@
     hideControls()
     el.remove()
   }
-  document.addEventListener('beforeinput', function (e) {
-    if (e.target.classList && e.target.classList.contains('space')) e.preventDefault()
-  })
-  // An empty block has no line to put the caret on, so a click on a space focuses it by hand.
-  document.addEventListener('mousedown', function (e) {
-    if (!e.target.classList || !e.target.classList.contains('space')) return
-    e.preventDefault()
-    e.target.focus()
-  })
-
-  // # on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
+  // # opens the anchor field over the block, holding its own anchor: Enter puts the typed one on the block (an empty field
+  // takes it off). The resume links to projects by their anchors, so those stay on the articles.
   function askAnchor(el) {
     asking = { kind: 'anchor', block: el }
     var rect = el.getBoundingClientRect()
     hideControls()
-    linkField.value = ''
+    linkField.value = el.id || ''
     linkField.placeholder = 'якорь'
     linkField.hidden = false
-    linkField.style.left = rect.left - 6 + 'px'
-    linkField.style.top = rect.top - 6 - 8 - linkField.getBoundingClientRect().height + 'px'
+    linkField.style.left = rect.left - 4 + 'px'
+    linkField.style.top = rect.top - 8 - linkField.getBoundingClientRect().height + 'px'
     linkField.focus()
+    linkField.select()
     listAnchors()
   }
 
-  // The anchors already on the page, under the field. A press on one goes to its project; a project with no blocks left gets
-  // the template back, so it can be typed into again. × takes the anchor off: the project's line in the project list goes,
-  // its text stays, and only a project with no blocks left goes with it.
+  // Every anchor on the page, under the field: a project's or a block's, with its text in grey. A press on one goes there
+  // (a project with no blocks left gets the template back, so it can be typed into again). × takes the anchor off; a
+  // project's line in the project list goes with it, its text stays, and only a project with no blocks left goes too.
   var anchors = document.createElement('div')
   anchors.className = 'edit-anchors'
   anchors.hidden = true
@@ -827,8 +822,9 @@
   function listAnchors() {
     var typed = linkField.value.trim()
     anchors.textContent = ''
-    Array.prototype.forEach.call(document.querySelectorAll('main article[id]'), function (article) {
-      var id = article.id, title = article.querySelector('h2'), row = document.createElement('div')
+    Array.prototype.forEach.call(document.querySelectorAll('main [id]'), function (target) {
+      var id = target.id, row = document.createElement('div')
+      var title = target.tagName === 'ARTICLE' ? target.querySelector('h1, h2') : target
       var name = document.createElement('button'), off = document.createElement('button')
       name.textContent = '#' + id
       if (title) {
@@ -839,8 +835,8 @@
       }
       name.classList.toggle('on', !!typed && id.indexOf(typed) >= 0)
       off.textContent = '×'
-      name.addEventListener('click', function () { goToProject(id) })
-      off.addEventListener('click', function () { removeAnchor(id) })
+      name.addEventListener('click', function () { goToAnchor(target) })
+      off.addEventListener('click', function () { removeAnchor(target) })
       row.appendChild(name)
       row.appendChild(off)
       anchors.appendChild(row)
@@ -859,22 +855,37 @@
     first.focus()
     placeCaret(first, null)
   }
-  function removeAnchor(id) {
+  function goToAnchor(target) {
+    if (target.tagName === 'ARTICLE') return goToProject(target.id)
+    closeAnchor(false)
+    target.scrollIntoView({ block: 'center' })
+    target.focus()
+    if (target.isContentEditable) placeCaret(target, null)
+  }
+  function removeAnchor(target) {
     var at = asking && blocks.indexOf(asking.block)
     closeAnchor(false)
-    structural({ op: 'removeAnchor', id: id }, { index: at })
+    if (target.tagName === 'ARTICLE') structural({ op: 'removeAnchor', id: target.id }, { index: at })
+    else setAnchor(target, '')
+  }
+  function setAnchor(el, id) {
+    var i = blocks.indexOf(el)
+    save()
+    send([{ op: 'anchor', index: i, before: source[i], id: id }])
+    if (id) el.id = id
+    else el.removeAttribute('id')
   }
   function closeAnchor(apply) {
-    var l = asking, id = linkField.value.trim()
-    if (apply && (!/^[a-z0-9-]+$/.test(id) || document.getElementById(id))) return show('Такой якорь не подойдёт')
+    var l = asking
+    if (!l) return
+    var id = linkField.value.trim(), other = id && document.getElementById(id)
+    if (apply && id && (!/^[a-z0-9-]+$/.test(id) || (other && other !== l.block))) return show('Такой якорь не подойдёт')
     asking = null
     linkField.hidden = true
     anchors.hidden = true
     linkField.placeholder = 'https://'
     l.block.focus()
-    if (!apply) return
-    var article = l.block.closest('article')
-    structural({ op: 'addProject', id: id, after: article && article.id }, { selector: '#' + id + ' h2', select: true })
+    if (apply && id !== (l.block.id || '')) setAnchor(l.block, id)
   }
 
   // Bigger changes go to the server and the page comes back from the file, at the same place.
@@ -941,9 +952,9 @@
       else if (el.tagName === 'UL' && !e.shiftKey) newItem(el)
       else lineBreak()
     }
-    if (el && el.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) {
+    if (block && block.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) {
       e.preventDefault()
-      return removeSpace(el)
+      return removeSpace(block)
     }
     if (el && e.key === 'Backspace') {
       var li = el.tagName === 'UL' && itemAt(el)
