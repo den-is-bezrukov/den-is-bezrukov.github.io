@@ -1147,6 +1147,19 @@
     }
   })
 
+  // A double click in a link picks a word of that link only: in a row of links the dots between them are drawn by the
+  // stylesheet, so the browser sees the links' words run together.
+  document.addEventListener('dblclick', function (e) {
+    var a = e.target.closest && e.target.closest('main a'), sel = getSelection()
+    if (!a || !sel.rangeCount) return
+    var range = sel.getRangeAt(0), own = document.createRange()
+    own.selectNodeContents(a)
+    if (range.compareBoundaryPoints(Range.START_TO_START, own) < 0) range.setStart(own.startContainer, own.startOffset)
+    if (range.compareBoundaryPoints(Range.END_TO_END, own) > 0) range.setEnd(own.endContainer, own.endOffset)
+    sel.removeAllRanges()
+    sel.addRange(range)
+  })
+
   // Links stay links but don't take you away mid-edit; ⌘-click follows them. Another page of the site opens in edit mode too,
   // an anchor on this page just scrolls to its place.
   document.addEventListener('click', function (e) {
