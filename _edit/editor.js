@@ -58,8 +58,8 @@
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
-    '.edit-case span { min-width: 1ch; outline: none; cursor: text; }' +
-    '.edit-case span:focus { color: var(--text); }' +
+    '.edit-case > span { min-width: 1ch; outline: none; cursor: text; }' +
+    '.edit-case > span:focus { color: var(--text); }' +
     // Over the anchor, 8px above it: + ↑ ↓ under the pointer, × while it is typed into.
     '.edit-case .edit-tools { left: 50%; top: calc(50% - 32px); transform: translate(-50%, -50%); text-transform: none; }' +
     '.edit-case:hover:not(:focus-within) .edit-tools.moves, .edit-case:focus-within .edit-tools.off { display: flex; }' +
