@@ -220,6 +220,7 @@
   function save() {
     clearTimeout(timer)
     timer = null
+    followTitles()
     var ops = []
     blocks.forEach(function (el, i) {
       var html = content(el), balance = el.classList.contains('balance')
@@ -233,6 +234,38 @@
       el.savedBalance = balance
     })
     if (ops.length) send(ops)
+  }
+
+  // A line of the project list follows its project's title as long as it reads the same: a title changed changes the
+  // lines that matched it; a line typed otherwise keeps its words, and ↩ brings it back to the title.
+  function plainText(text) {
+    return text.replace(/[\u00a0\u200b·]/g, function (c) { return c === '\u00a0' ? ' ' : '' }).replace(/\s+/g, ' ').trim()
+  }
+  function titleNode(id) {
+    var article = id && document.getElementById(id)
+    return article && article.tagName === 'ARTICLE' ? article.querySelector('h1, h2') : null
+  }
+  function titleOf(link) {
+    var t = titleNode((link.getAttribute('href') || '').split('#')[1])
+    return t ? plainText(t.textContent) : null
+  }
+  function itemLink(el) {
+    if (!el.classList.contains('list') || !el.closest('.about')) return null
+    var item = rowItem(el)
+    return item && item.querySelector('a[href*="#"]')
+  }
+  function followTitles() {
+    Array.prototype.forEach.call(document.querySelectorAll('main article[id]'), function (article) {
+      var t = titleNode(article.id)
+      if (!t || t.savedHtml === undefined) return
+      var holder = document.createElement('div')
+      holder.innerHTML = t.savedHtml
+      var was = plainText(holder.textContent), now = plainText(t.textContent)
+      if (was === now) return
+      Array.prototype.forEach.call(document.querySelectorAll('.about .list a[href$="#' + article.id + '"]'), function (a) {
+        if (plainText(a.textContent) === was) a.textContent = now
+      })
+    })
   }
 
   // A row of links or breadcrumbs with all its words wiped out: it is part of the page's frame, so it never goes empty.
@@ -714,6 +747,14 @@
   }))
   // ↩ brings a space back to the page's usual gap for its place, shown only while it is set otherwise.
   var resetGroup = group([button('↩', function (el) { resize(el, usualGap(el)) })])
+  // ↩ on a line of the project list set apart from its project's title brings it back to the title.
+  var titleGroup = group([button('↩', function (el) {
+    var link = itemLink(el)
+    if (!link) return
+    link.textContent = titleOf(link)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    render()
+  })])
   function usualGap(el) {
     var i = blocks.indexOf(el), prev = blocks[i - 1], next = blocks[i + 1]
     // A space closing its group (the header) stands between groups.
@@ -737,6 +778,8 @@
     wrapGroup.hidden = words || space
     sizeGroup.hidden = !space
     resetGroup.hidden = !space || current.classList.contains('space-' + usualGap(current))
+    var link = itemLink(current)
+    titleGroup.hidden = words || !link || titleOf(link) === null || plainText(link.textContent) === titleOf(link)
     moveGroups[0].hidden = moveGroups[1].hidden = words || space
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
@@ -749,7 +792,8 @@
   document.addEventListener('selectionchange', function () {
     if (!current || !tools.classList.contains('shown')) return
     var words = selected()
-    if (words === wasSelected && !words) return
+    // In the project list the caret going from line to line shows or hides ↩.
+    if (words === wasSelected && !words) return current.classList.contains('list') && render()
     wasSelected = words
     render()
     placeControls()
