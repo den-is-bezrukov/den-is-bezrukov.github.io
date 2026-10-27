@@ -1,0 +1,12 @@
+{
+  // Edit mode in GitHub Codespaces: the same server as _edit/Править.command, started as soon as the codespace opens.
+  // The page opens on its own; add ?edit to its address to edit. Edits land in the codespace's copy of the repository,
+  // so they go to the site only after a commit and a push from there.
+  "name": "Портфолио: правка",
+  "image": "mcr.microsoft.com/devcontainers/python:3",
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": { "label": "Правка", "onAutoForward": "openBrowser" }
+  },
+  "postAttachCommand": "python3 _edit/server.py --no-open"
+}
