@@ -72,10 +72,9 @@
     '.edit-case-acts button:hover { color: var(--text); }' +
     // ╳ is a box-drawing glyph, a cell of 0.6 by 1.2 em; squeezed into a square as tall as a capital it sits with the words.
     '.edit-case-acts button:last-child { display: inline-block; transform: scale(1.1667, 0.5833); }' +
-    // A project hidden from the site stays in the editor, faint, with its line in the project list.
+    // A project hidden from the site stays in the editor, faint; its line in the project list goes, as on the site.
     'main article[hidden] { display: block; }' +
-    'main article[hidden] > :not(.edit-case), main .list .row > span[hidden] { opacity: 0.3; }' +
-    'main .list .row > span[hidden] { display: inline; }' +
+    'main article[hidden] > :not(.edit-case) { opacity: 0.3; }' +
     '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
     '.edit-case-name:focus-within [contenteditable] { color: var(--text); }' +
     // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
