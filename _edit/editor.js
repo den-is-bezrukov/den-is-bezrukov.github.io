@@ -933,10 +933,10 @@
     })
     return bar
   }
-  // A new project's anchor until it gets its own: case, case-2…
+  // A new project's anchor until it gets its own: new, new-2… (plainly a stand-in, to be typed over)
   function freeAnchor() {
     for (var k = 1; ; k++) {
-      var name = k === 1 ? 'case' : 'case-' + k
+      var name = k === 1 ? 'new' : 'new-' + k
       if (!document.getElementById(name)) return name
     }
   }
