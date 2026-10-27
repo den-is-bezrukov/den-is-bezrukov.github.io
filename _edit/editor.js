@@ -1093,7 +1093,9 @@
       tag.classList.add('paced')
       tag.tabIndex = -1
       tag.addEventListener('mousedown', function (e) { if (e.target === tag) { e.preventDefault(); tag.focus() } })
-      tag.append(caseTools('sizes', GAPS.map(function (g) { return [g[1], function () { setGap(g[0]) }] })))
+      // ↩ after the heights brings back the usual 128, shown only while the gap is set otherwise.
+      tag.append(caseTools('sizes', GAPS.map(function (g) { return [g[1], function () { setGap(g[0]) }] })
+        .concat([['↩', function () { setGap('800') }]])))
     }
     article.prepend(tag)
     function moveCase(dir) {
@@ -1164,6 +1166,7 @@
       c.tag.dataset.gap = Math.round(parseFloat(height))
       Array.prototype.forEach.call(c.tag.querySelectorAll('.sizes button'), function (b) {
         b.classList.toggle('on', GAPS.some(function (g) { return g[0] === gap && g[1] === b.dataset.label }))
+        if (b.dataset.label === '↩') b.parentNode.hidden = gap === '800'
       })
     })
   }
