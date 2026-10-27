@@ -441,7 +441,7 @@
   })
   document.body.appendChild(linkOff)
 
-  // Typing / offers the site's pages and their projects, # the projects of this page; ↑ ↓ pick one, Enter or a click takes
+  // Typing / offers the site's other pages (and after page + #, its projects), # the projects of this page; ↑ ↓ pick one, Enter or a click takes
   // it. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
   var PAGES = [['/', 'Главная'], ['/cases/', 'Проекты']]
   var suggestions = document.createElement('div')
@@ -478,8 +478,12 @@
     if (!asking || asking.kind !== 'link' || !/^[\/#]/.test(typed)) return
     loadKnown().then(function (all) {
       var here = location.pathname.replace(/[^/]*$/, '')
+      // # this page's projects; / the other pages, and once a # follows a page, that page's projects.
       var list = all.filter(function (s) {
-        return typed[0] === '#' ? s[0].indexOf(here + '#') === 0 && s[0].slice(here.length).indexOf(typed) === 0 : s[0].indexOf(typed) === 0
+        if (typed[0] === '#') return s[0].indexOf(here + '#') === 0 && s[0].slice(here.length).indexOf(typed) === 0
+        var page = s[0].split('#')[0]
+        if (typed.indexOf('#') < 0) return s[0] === page && page !== here && page.indexOf(typed) === 0
+        return s[0] !== page && page !== here && s[0].indexOf(typed) === 0
       })
       suggestions.textContent = ''
       picked = 0
