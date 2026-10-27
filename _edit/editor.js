@@ -43,7 +43,6 @@
     '.edit-tools { display: none; position: absolute; flex-wrap: wrap; max-width: calc(100vw - 16px); padding: 0; text-transform: uppercase; color: var(--muted); }' +
     '.edit-tools button[data-style] { min-width: 48px; }' +
     '.edit-tools button[data-style^="h"] { min-width: 0; width: 28px; }' +
-    '.edit-tools button[data-size] { width: 28px; }' +
     '.edit-tools.shown, .edit-tools span { display: flex; flex-wrap: wrap; }' +
     '.edit-tools span { justify-content: center; min-width: 32px; box-sizing: border-box; padding: 0 4px; }' +
     '.edit-tools span:not([hidden]) ~ span:not([hidden]) { border-left: 0.5px solid rgba(0, 0, 0, 0.1); }' +
