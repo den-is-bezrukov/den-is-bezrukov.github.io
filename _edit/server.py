@@ -285,17 +285,41 @@ def write(path, source):
     written[path] = source
 
 
+def prefix(source_path, target_path):
+    """How a link on source_path's page starts when it points at target_path's page: '', 'cases/' or '../'."""
+    rel = os.path.relpath(os.path.dirname(target_path), os.path.dirname(source_path)).replace(os.sep, '/')
+    return '' if rel == '.' else rel + '/'
+
+
+def anchor_taken(path, id):
+    """Whether another page already has this anchor on something else, so the project's pair can't take it."""
+    for page in pages():
+        other = os.path.join(ROOT, page)
+        with open(other, encoding='utf-8') as f:
+            if other != path and 'id="%s"' % id in f.read():
+                return True
+    return False
+
+
 def relink_others(path, old, new):
-    """Points the other pages' links to path#old at path#new, each write kept in history like the editor's own."""
+    """A project's anchor goes by one name on both pages: the other page's project with the old anchor takes the new one,
+    and every link to either of them follows. Each write is kept in history like the editor's own."""
     for page in pages():
         other = os.path.join(ROOT, page)
         if other == path:
             continue
-        prefix = os.path.relpath(os.path.dirname(path), os.path.dirname(other)).replace(os.sep, '/')
-        prefix = '' if prefix == '.' else prefix + '/'
         with open(other, encoding='utf-8') as f:
             source = f.read()
-        result = relink(source, prefix, old, new)
+        result = relink(source, prefix(other, path), old, new)
+        paired = re.search(r'<article\b[^>]*\sid="%s"' % re.escape(old), result)
+        if paired:
+            result = result[:paired.start()] + paired.group(0).replace('id="%s"' % old, 'id="%s"' % new) + result[paired.end():]
+            result = relink(result, '', old, new)
+            with open(path, encoding='utf-8') as f:
+                own = f.read()
+            relinked = relink(own, prefix(path, other), old, new)
+            if relinked != own:
+                write(path, relinked)
         if result != source:
             snapshot(other, source)
             undone.setdefault(other, []).append(source)
@@ -366,6 +390,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 blocks = Blocks(source)
                 result = source
                 try:
+                    if any(e.get('op') == 'renameAnchor' and anchor_taken(path, e['id']) for e in edits):
+                        raise Refused('anchor taken')
                     for edit in sorted(edits, key=lambda e: -e.get('index', 0)):
                         result = apply(result, edit, blocks.spans, blocks.articles)
                 except (Refused, KeyError, IndexError, StopIteration):
@@ -375,7 +401,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     undone.setdefault(path, []).append(source)
                     redone[path] = []
                     write(path, result)
-                # A project's new anchor: the links to it from the other page follow too.
+                # A project's new anchor: its pair on the other page and the links to both follow.
                 for edit in edits:
                     if edit.get('op') == 'renameAnchor' and edit.get('before'):
                         relink_others(path, edit['before'], edit['id'])
