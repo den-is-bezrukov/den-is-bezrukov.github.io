@@ -58,11 +58,11 @@
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, DELETE at the
+    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, Remove at the
     // right end of its line; under the pointer, + ↑ ↓ 8px above it.
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; padding-bottom: 16px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case-line { display: flex; justify-content: space-between; align-self: stretch; }' +
-    '.edit-case-off { all: unset; display: none; cursor: pointer; }' +
+    '.edit-case-off { all: unset; display: none; text-transform: none; cursor: pointer; }' +
     '.edit-case-off:hover { color: var(--text); }' +
     '.edit-case:focus-within .edit-case-off { display: block; }' +
     '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
@@ -699,9 +699,9 @@
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = isSpace(current) ? rect.left + (rect.width - size.width) / 2 : rect.left - ring
     left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
-    // The toolbar stands right on the block's top: on a text block's first line, 4px over a space's top edge (so it stays
-    // put whatever the space's height).
-    var top = rect.top - size.height - (isSpace(current) ? 4 : 0)
+    // The toolbar stands right on the block's top: on a text block's first line, on a space's top edge (so it stays put
+    // whatever the space's height).
+    var top = rect.top - size.height
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
@@ -907,7 +907,7 @@
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
-  // other page; while it is typed into: DELETE takes the project off this page.
+  // other page; while it is typed into: Remove takes the project off this page.
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
@@ -920,7 +920,7 @@
     var line = document.createElement('div'), off = document.createElement('button')
     line.className = 'edit-case-line'
     off.className = 'edit-case-off'
-    off.textContent = 'delete'
+    off.textContent = 'Remove'
     off.addEventListener('pointerdown', function (e) { e.preventDefault() })
     off.addEventListener('mousedown', function (e) { e.preventDefault() })
     off.addEventListener('click', function () {
