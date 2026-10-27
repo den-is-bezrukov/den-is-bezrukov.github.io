@@ -557,7 +557,7 @@
 
   // Typing / offers the site's other pages, # the projects of this page; ↑ ↓ pick one, Enter or a click takes it. A page
   // picked keeps the field open on it, the page itself first and its projects under it, so a project is two picks away.
-  // Hidden projects aren't offered. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
+  // Hidden projects are offered too. The link goes in as the site writes its own: cases/#umo from the home page, ../ from the cases.
   var PAGES = [['/', 'Главная'], ['/cases/', 'Проекты']]
   var suggestions = document.createElement('div')
   suggestions.className = 'edit-suggest'
@@ -595,7 +595,6 @@
       var here = location.pathname.replace(/[^/]*$/, '')
       // # this page's projects; / the other pages; a page typed out whole, the page and its projects.
       var list = all.filter(function (s) {
-        if (s[2]) return false
         if (typed[0] === '#') return s[0].indexOf(here + '#') === 0 && s[0].slice(here.length).indexOf(typed) === 0
         var page = s[0].split('#')[0]
         if (page === here) return false
@@ -624,7 +623,7 @@
   }
   function take(b) {
     var path = b.dataset.path
-    var projects = path.indexOf('#') < 0 && known.some(function (k) { return !k[2] && k[0].indexOf(path + '#') === 0 })
+    var projects = path.indexOf('#') < 0 && known.some(function (k) { return k[0].indexOf(path + '#') === 0 })
     if (projects && linkField.value.trim() !== path) {
       linkField.value = path
       linkField.setSelectionRange(path.length, path.length)
