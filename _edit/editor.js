@@ -1174,6 +1174,16 @@
     e.preventDefault()
     cutItem(el, item, false)
   })
+  // A click on the dot before an item, or just before its first letter, puts the caret at that item's start: the dot is
+  // drawn by the stylesheet and holds no caret, so the browser would put it at the end of the item before.
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('main .list')
+    if (!el || e.metaKey || !getSelection().isCollapsed) return
+    var hit = e.target.closest('.row > span')
+    if (!hit || rowItem(el) === hit) return
+    var text = document.createTreeWalker(hit, NodeFilter.SHOW_TEXT).nextNode()
+    if (text) caret(text, 0)
+  })
   // Letters typed at an item's very start or end go into its link, not beside it, as the browser would put them.
   function typeIntoLink(el, item, e) {
     var a = item.querySelector('a'), range = getSelection().getRangeAt(0)
