@@ -57,15 +57,19 @@
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 8px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
+    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, DELETE at the
+    // right end of its line; under the pointer, + ↑ ↓ 8px above it.
+    '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; padding-bottom: 16px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
+    '.edit-case-line { display: flex; justify-content: space-between; align-self: stretch; }' +
+    '.edit-case-off { all: unset; display: none; cursor: pointer; }' +
+    '.edit-case-off:hover { color: var(--text); }' +
+    '.edit-case:focus-within .edit-case-off { display: block; }' +
     '.edit-case-name [contenteditable] { display: inline-block; min-width: 1ch; outline: none; cursor: text; }' +
     '.edit-case-name:focus-within [contenteditable] { color: var(--text); }' +
     // Typed into, the anchor is marked as a block of text is: light grey under it, 4px past it on either side.
     '.edit-case-name:focus-within { background: #f0f0f0; box-shadow: -4px 0 0 #f0f0f0, 4px 0 0 #f0f0f0; border-radius: 4px; }' +
-    // At the bottom of the gap, 8px above the project, the toolbar right on top of it: + ↑ ↓ under the pointer, × while it
-    // is typed into.
     '.edit-case .edit-tools { position: static; order: -1; font-size: 14px; line-height: 1.15; text-transform: none; }' +
-    '.edit-case:hover:not(:focus-within) .edit-tools.moves, .edit-case:focus-within .edit-tools.off { display: flex; }' +
+    '.edit-case:hover:not(:focus-within) .edit-tools { display: flex; }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -901,7 +905,7 @@
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
-  // other page; while it is typed into: × takes the project off this page.
+  // other page; while it is typed into: DELETE takes the project off this page.
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
@@ -911,13 +915,21 @@
     var name = document.createElement('span')
     name.className = 'edit-case-name'
     name.append('#', id)
-    tag.append(name, caseTools('moves', [['+', function () {
-      gone()
-      structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
-    }], ['↑', function () { moveCase(-1) }], ['↓', function () { moveCase(1) }]]), caseTools('off', [['×', function () {
+    var line = document.createElement('div'), off = document.createElement('button')
+    line.className = 'edit-case-line'
+    off.className = 'edit-case-off'
+    off.textContent = 'delete'
+    off.addEventListener('pointerdown', function (e) { e.preventDefault() })
+    off.addEventListener('mousedown', function (e) { e.preventDefault() })
+    off.addEventListener('click', function () {
       gone()
       structural({ op: 'removeProject', article: n, before: article.id }, null)
-    }]]))
+    })
+    line.append(name, off)
+    tag.append(line, caseTools([['+', function () {
+      gone()
+      structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
+    }], ['↑', function () { moveCase(-1) }], ['↓', function () { moveCase(1) }]]))
     article.prepend(tag)
     function moveCase(dir) {
       var to = n + dir
@@ -946,9 +958,9 @@
     })
     return { article: article, tag: tag }
   })
-  function caseTools(kind, items) {
+  function caseTools(items) {
     var bar = document.createElement('div')
-    bar.className = 'edit-tools ' + kind
+    bar.className = 'edit-tools'
     items.forEach(function (item) {
       var b = document.createElement('button')
       b.textContent = item[0]
