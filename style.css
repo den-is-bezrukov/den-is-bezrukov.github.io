@@ -18,9 +18,9 @@
   --space-400: 4rem;
   --space-600: 6rem;
   --space-800: 8rem;
-  --bg: #fafafa;
+  --bg: #ffffff;
   --text: #000000;
-  /* Two colours only: black text (90% white in the dark theme) on a ground of #fafafa, LoveFrom's, and a grey, #999999, the text colour at 65% in the dark theme. */
+  /* Two colours only: black text (90% white in the dark theme) on white (#fafafa, LoveFrom's, in edit mode), and a grey, #999999, the text colour at 65% in the dark theme. Selected text lies on #f0f0f0. */
   --muted: #999999;
 }
 /* The dark theme is off for now; to bring it back, take it out of this comment.
@@ -62,6 +62,7 @@ li + li { margin-top: var(--space-050); }
 /* A block switched to Wrap: B in edit mode gets lines of nearly equal length. */
 .balance { text-wrap: balance; }
 strong { font-weight: 600; }
+::selection { background: #f0f0f0; }
 a {
   color: inherit;
   text-decoration: underline;
