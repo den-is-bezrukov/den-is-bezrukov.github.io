@@ -1172,10 +1172,35 @@
     if (!item) return
     // A space typed at an item's start (after a dot) is not wanted: the row spaces its items itself.
     if (e.data === ' ' && atItemStart(item)) return e.preventDefault()
-    if (e.data.indexOf('·') < 0) return
+    if (e.data.indexOf('·') < 0) return typeIntoLink(el, item, e)
     e.preventDefault()
     cutItem(el, item, false)
   })
+  // Letters typed at an item's very start or end go into its link, not beside it, as the browser would put them.
+  function typeIntoLink(el, item, e) {
+    var a = item.querySelector('a'), range = getSelection().getRangeAt(0)
+    if (!a) return
+    e.preventDefault()
+    var lead = document.createRange()
+    lead.setStart(item, 0)
+    lead.setEnd(range.startContainer, range.startOffset)
+    var atStart = !lead.toString().replace(/\u200b/g, '')
+    range.deleteContents()
+    var spot = range.startContainer
+    if (spot.nodeType === 3 && a.contains(spot) && !(atStart && range.startOffset === 0)) {
+      spot.insertData(range.startOffset, e.data)
+      caret(spot, range.startOffset + e.data.length)
+      return el.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    var walker = document.createTreeWalker(a, NodeFilter.SHOW_TEXT), first = walker.nextNode(), last = first
+    for (var n = first; n; n = walker.nextNode()) last = n
+    var text = atStart ? first : last
+    if (!text) a.appendChild(text = document.createTextNode(''))
+    var at = atStart ? 0 : text.length
+    text.insertData(at, e.data)
+    caret(text, at + e.data.length)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  }
   // Cuts the item at the caret: after a dot into two items side by side, after Enter onto two lines. Enter at an item's
   // start or end only breaks the line between it and its neighbour.
   function cutItem(el, item, newLine) {
