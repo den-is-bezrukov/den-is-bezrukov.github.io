@@ -1,7 +1,7 @@
 // Edit mode: every heading and paragraph is typed into in place and saved into the page's file a moment later.
 // Enter breaks the line (in a list it starts the next item), ⌘Enter adds a paragraph below the block, ⇧⌘Enter cuts the block
 // at the caret into a new paragraph, Backspace at the start of a paragraph joins it to the one above; ⌥Space sets a non-breaking space, ⌘K or pasting an address over selected words a link.
-// A toolbar above the block with the caret adds a section or a project (§), switches the block's style and its line layout
+// A toolbar above the block with the caret adds a section or a project (#), switches the block's style and its line layout
 // (pretty, balance), links words (a) and moves it (↑ ↓); ⌥⌘1/2/3/0/8 and ⌘⇧↑/↓ do the same from the keyboard, ⌘Z/⇧⌘Z step through saves.
 (function () {
   var blocks = Array.prototype.slice.call(document.querySelectorAll('main h1, main h2, main h3, main p, main ul'))
@@ -476,9 +476,9 @@
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
-  // § adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
+  // # adds a section in a case. On the home page it would add a project after asking its anchor (askAnchor); that button
   // is out for now.
-  if (!home) group([button('§', addSection)])
+  if (!home) group([button('#', addSection)])
   // ul, the list, works as a switch: pressed on a list, it turns the list back into body; it stands in a group of its own.
   var styleGroup = group(styles.filter(function (s) { return s[1] !== 'ul' }).map(styleButton))
   var listGroup = group([styleButton(STYLES[6])])
@@ -690,7 +690,7 @@
     placeControls()
   }
 
-  // § in a case puts a section heading and a paragraph after the block, the heading's text selected to type over.
+  // # in a case puts a section heading and a paragraph after the block, the heading's text selected to type over.
   function addSection(el) {
     var i = blocks.indexOf(el)
     save()
@@ -710,7 +710,7 @@
     placeControls()
   }
 
-  // § on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
+  // # on the home page asks for the anchor first (the resume links to projects by it), then adds a project after the current one.
   function askAnchor(el) {
     asking = { kind: 'anchor', block: el }
     var rect = el.getBoundingClientRect()
