@@ -106,14 +106,14 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
 }
 /* Print (and the PDF made from it by _edit/pdf.py), made to be sent and printed: A4 with margins, on white, the column
    across the page. The base goes down to 13px (about 10pt, as in a resume), and every size and gap, all in rem, follows
-   it, every space at half its height; projects stand 200 apart and follow one another down the pages. A paragraph is never cut, and a title stays with
+   it, every space at half its height; projects stand 300 apart and follow one another down the pages. A paragraph is never cut, and a title stays with
    its grey line and the first paragraph, so no page ends on a title. */
 @page { size: A4; margin: 16mm; }
 @media print {
   :root { --bg: #ffffff; }
   html { font-size: 13px; }
   main { max-width: none; padding: 0; }
-  article { margin-top: var(--space-200); }
+  article { margin-top: var(--space-300); }
   /* Every space at half its height: a page holds more and reads denser, as print does. */
   .space-050 { height: 0.25rem; }
   .space-100 { height: 0.5rem; }
