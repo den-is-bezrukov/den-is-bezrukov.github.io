@@ -545,11 +545,16 @@
     var el = current
     if (!el || !tools.classList.contains('shown')) return
     var lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.5
-    var range = document.createRange()
-    range.selectNodeContents(el)
-    // Lines: the words' boxes grouped by their middle, each line as tall as the line height around that middle.
+    // Lines: the words' boxes grouped by their middle, each line as tall as the line height around that middle. Only text
+    // counts: the boxes of elements around it (the block row of a link list, its dots hidden at a line's start) would not.
+    var rects = [], range = document.createRange()
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    for (var n = walker.nextNode(); n; n = walker.nextNode()) {
+      range.selectNodeContents(n)
+      rects.push.apply(rects, range.getClientRects())
+    }
     var lines = []
-    Array.prototype.forEach.call(range.getClientRects(), function (r) {
+    rects.forEach(function (r) {
       if (!r.width) return
       var mid = (r.top + r.bottom) / 2
       var line = lines.filter(function (l) { return Math.abs(l.mid - mid) < lh / 2 })[0]
