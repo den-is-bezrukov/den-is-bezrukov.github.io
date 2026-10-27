@@ -52,8 +52,9 @@
     // Every space is marked in the middle of the column by a line across it, as long as the space is tall.
     'main .space { position: relative; cursor: pointer; }' +
     'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
-    // Under the pointer, or picked, the line gives way to the space's height in pixels on a light grey tag in its middle.
-    'main .space:hover::after, main .space:focus::after { top: 50%; height: 24px; min-width: 56px; aspect-ratio: auto; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; border-radius: 4px; background: #f0f0f0; font: 500 14px/1.15 "Geist Mono", ui-monospace, monospace; color: #808080; }' +
+    // Under the pointer, or picked, the space is drawn as its edges across the column, its height in pixels in the middle.
+    'main .space:hover, main .space:focus { box-shadow: inset 0 1px rgba(0, 0, 0, 0.1), inset 0 -1px rgba(0, 0, 0, 0.1); }' +
+    'main .space:hover::after, main .space:focus::after { top: 50%; height: auto; aspect-ratio: auto; transform: translate(-50%, -50%); background: none; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); }' +
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
@@ -698,9 +699,9 @@
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = isSpace(current) ? rect.left + (rect.width - size.width) / 2 : rect.left - ring
     left = Math.max(8, Math.min(left, document.documentElement.clientWidth - size.width - 8))
-    // The toolbar stands right on the block's top: a text block's first line, a space's own edge (so it stays put whatever
-    // the space's height).
-    var top = rect.top - size.height
+    // The toolbar stands right on the block's top: on a text block's first line, 4px over a space's top edge (so it stays
+    // put whatever the space's height).
+    var top = rect.top - size.height - (isSpace(current) ? 4 : 0)
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
