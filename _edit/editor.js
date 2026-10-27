@@ -549,7 +549,7 @@
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
-    var top = rect.top - size.height - 2
+    var top = rect.top - size.height - 1
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
