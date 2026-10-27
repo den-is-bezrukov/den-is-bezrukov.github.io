@@ -216,6 +216,8 @@
     blocks.forEach(function (el, i) {
       var html = content(el), balance = el.classList.contains('balance')
       if (html === el.savedHtml && balance === el.savedBalance) return
+      // A row of links or breadcrumbs is never saved empty; leaving it brings its words back.
+      if (emptied(el)) return
       var after = indent(source[i], html)
       ops.push({ op: 'edit', index: i, before: source[i], after: after, balance: balance })
       source[i] = after
@@ -223,6 +225,12 @@
       el.savedBalance = balance
     })
     if (ops.length) send(ops)
+  }
+
+  // A row of links or breadcrumbs with all its words wiped out: it is part of the page's frame, so it never goes empty.
+  function emptied(el) {
+    return el.classList.contains('list') || el.classList.contains('crumbs')
+      ? !el.textContent.replace(/[·\u200b\s]/g, '') : false
   }
 
   // A plain paragraph: not a heading, not a grey service line or a row of links.
@@ -1086,6 +1094,13 @@
     if (i < 0 || asking) return save()
     current = null
     hideControls()
+    if (emptied(el)) {
+      el.innerHTML = el.savedHtml
+      markNbsp(el)
+      markDots(el)
+      if (window.typografRu) window.typografRu(el)
+      return
+    }
     if (plain(el) && !el.textContent.trim() && blocks.length > 1) {
       // The space above it goes with it (or the one below, for a paragraph that opens its group).
       var s = isSpace(blocks[i - 1]) ? i - 1 : isSpace(blocks[i + 1]) ? i + 1 : -1
