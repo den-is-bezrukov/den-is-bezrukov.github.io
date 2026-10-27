@@ -19,8 +19,8 @@ from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EDITABLE = ('h1', 'h2', 'h3', 'p', 'ul')
-# Spaces between blocks: <div class="space space-300"></div>, 16 to 96px.
-SPACES = ('100', '150', '200', '300', '400', '500', '600')
+# Spaces between blocks: <div class="space space-300"></div>, 0 to 96px.
+SPACES = ('000', '050', '100', '150', '200', '300', '400', '500', '600')
 ONLY_SPACES = re.compile(r'(\s*<div class="space[^"]*"></div>)*\s*')
 PORT = 8765
 LOCK = threading.Lock()

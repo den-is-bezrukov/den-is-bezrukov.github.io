@@ -9,7 +9,7 @@
   if (blocks.length !== source.length) return alert('Не удалось сопоставить текст с файлом, режим правки выключен.')
 
   // A space's class on the spacing scale and its height in pixels, as the editor names it.
-  var SPACES = [['100', '16'], ['150', '24'], ['200', '32'], ['300', '48'], ['400', '64'], ['500', '80'], ['600', '96']]
+  var SPACES = [['000', '0'], ['050', '8'], ['100', '16'], ['150', '24'], ['200', '32'], ['300', '48'], ['400', '64'], ['500', '80'], ['600', '96']]
   var style = document.createElement('style')
   style.textContent =
     // The editor's own lettering is Geist Mono, kept in _edit with its licence, so the site never loads it.
@@ -55,6 +55,8 @@
     // Every space is marked in the middle of the column by a 24px line across it.
     'main .space { position: relative; cursor: pointer; }' +
     'main .space::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 100%; width: 24px; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
+    // A space of 0 has no height to click: its mark reaches 4px up and down to be found.
+    'main .space-000::after { top: -4px; height: 8px; }' +
     // Under the pointer, or picked, the space is drawn as its edges across the column, its height in pixels in the middle.
     'main .space:hover, main .space:focus { box-shadow: inset 0 1px rgba(0, 0, 0, 0.1), inset 0 -1px rgba(0, 0, 0, 0.1); }' +
     'main .space:hover::after, main .space:focus::after { top: 50%; height: auto; width: auto; transform: translate(-50%, -50%); background: none; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); }' +

@@ -61,7 +61,9 @@ p.lead { font-size: 1.5rem; line-height: 1.333; font-weight: 500; }
 ul { padding-left: var(--space-150); }
 li { text-wrap: pretty; }
 li + li { margin-top: var(--space-050); }
-/* Space: the gap between two blocks, 100 to 600 of the spacing scale; 150 is the usual one between paragraphs. */
+/* Space: the gap between two blocks, 0 to 600 of the spacing scale; 150 is the usual one between paragraphs. */
+.space-000 { height: 0; }
+.space-050 { height: var(--space-050); }
 .space-100 { height: var(--space-100); }
 .space-150 { height: var(--space-150); }
 .space-200 { height: var(--space-200); }
