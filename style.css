@@ -104,14 +104,16 @@ article { margin-top: var(--space-800); scroll-margin-top: var(--space-800); }
   h3 { font-size: 1.25rem; }
   p.lead { font-size: 1.25rem; line-height: 1.4; }
 }
-/* Print (and the PDF made from it by _edit/pdf.py): A4 with margins, on white, the column across the page; projects
-   stand 600 apart instead of 800 and follow one another down the pages. A paragraph is never cut, and a title stays
-   with its grey line and the first paragraph, so no page ends on a title. */
-@page { size: A4; margin: 20mm 18mm; }
+/* Print (and the PDF made from it by _edit/pdf.py), made to be sent and printed: A4 with margins, on white, the column
+   across the page. The base goes down to 13px (about 10pt, as in a resume), and every size and gap, all in rem, follows
+   it; projects stand 300 apart and follow one another down the pages. A paragraph is never cut, and a title stays with
+   its grey line and the first paragraph, so no page ends on a title. */
+@page { size: A4; margin: 16mm; }
 @media print {
   :root { --bg: #ffffff; }
+  html { font-size: 13px; }
   main { max-width: none; padding: 0; }
-  article { margin-top: var(--space-600); }
+  article { margin-top: var(--space-300); }
   p, ul, h1, h2, h3 { break-inside: avoid; }
   /* A title carries an unseen tail as tall as its grey line and a few lines of text: with less room than that left, the
      title goes over to the next page. */
