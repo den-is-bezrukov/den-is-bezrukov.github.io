@@ -417,6 +417,35 @@
     range.collapse(true)
   }
 
+  // Bold words are a <strong>, set at 500 on the site.
+  function boldAt(range, el) {
+    var node = range.commonAncestorContainer
+    var b = (node.nodeType === 1 ? node : node.parentNode).closest('strong, b')
+    return b && el.contains(b) ? b : null
+  }
+  function bold(el) {
+    var sel = getSelection()
+    if (!sel.rangeCount || sel.isCollapsed) return
+    var range = sel.getRangeAt(0), on = boldAt(range, el)
+    if (on) {
+      var first = on.firstChild, last = on.lastChild
+      on.replaceWith.apply(on, Array.prototype.slice.call(on.childNodes))
+      range = document.createRange()
+      range.setStartBefore(first)
+      range.setEndAfter(last)
+    } else {
+      var strong = document.createElement('strong')
+      strong.appendChild(range.extractContents())
+      range.insertNode(strong)
+      range = document.createRange()
+      range.selectNodeContents(strong)
+    }
+    sel.removeAllRanges()
+    sel.addRange(range)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    render()
+  }
+
   function openLink(el) {
     var sel = getSelection()
     if (!sel.rangeCount) return
@@ -626,7 +655,8 @@
     b.addEventListener('click', function () { if (current) action(current) })
     return b
   }
-  // With words selected the toolbar holds only LINK, which links them as ⌘K does.
+  // With words selected the toolbar holds only BOLD (as ⌘B; on bold words it takes the bold off) and LINK (as ⌘K).
+  var boldGroup = group([button('bold', bold)])
   var linkGroup = group([button('link', openLink)])
   // list, the last of the styles, works as a switch: pressed on a list, it turns the list back into body.
   var styleGroup = group(styles.map(styleButton))
@@ -672,7 +702,8 @@
   function render() {
     if (!current) return
     var words = selected(), space = current.classList.contains('space')
-    linkGroup.hidden = !words
+    linkGroup.hidden = boldGroup.hidden = !words
+    boldGroup.firstChild.classList.toggle('on', words && !!boldAt(getSelection().getRangeAt(0), current))
     styleGroup.hidden = words || fixed(current)
     wrapGroup.hidden = words || space
     sizeGroup.hidden = !space
@@ -1074,6 +1105,10 @@
     if (el && e.altKey && e.code === 'Space') {
       e.preventDefault()
       insert(nbsp())
+    }
+    if (el && (e.metaKey || e.ctrlKey) && e.code === 'KeyB') {
+      e.preventDefault()
+      bold(el)
     }
     if (el && (e.metaKey || e.ctrlKey) && e.code === 'KeyK') {
       e.preventDefault()
