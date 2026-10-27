@@ -19,8 +19,8 @@
     '.edit-mark { position: absolute; z-index: -1; pointer-events: none; overflow: visible; fill: #f0f0f0; }' +
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
-    // The floating panels are white, a step lighter than the page's #fafafa, square, all lettering in them 14px.
-    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 0; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
+    // The floating panels are white, a step lighter than the page's #fafafa, all lettering in them 14px.
+    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 4px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
     // The project anchors under the anchor field: one per line, the anchor in the text colour where it holds what is typed,
     // the project's title after it in grey, × at the end.
@@ -44,7 +44,7 @@
     '.edit-tools button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 4px; cursor: pointer; }' +
     '.edit-tools button:hover, .edit-tools button.on { color: var(--text); }' +
     '.edit-tools button.on { font-weight: 600; }' +
-    '.nb { background: color-mix(in srgb, currentColor 18%, transparent); }'
+    '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
   status.className = 'edit-status'
@@ -520,7 +520,7 @@
     var size = tools.getBoundingClientRect()
     // On a narrow screen the toolbar stays inside it, 8px off the right edge at most.
     var left = Math.max(8, Math.min(rect.left - ring, document.documentElement.clientWidth - size.width - 8))
-    var top = rect.top - size.height
+    var top = rect.top - size.height - 4
     // Once the block's start has gone above the window, the toolbar holds 8px below the window's top, but goes up with the
     // block's end, so it never floats over the next block.
     var pinned = top < 8
@@ -537,7 +537,8 @@
   }
 
   // The mark under the block being edited: one shape that follows its lines like a highlighter, the full line height tall
-  // and 4px past the words on either side, with square corners; list items, set apart, get a shape each.
+  // and 4px past the words on either side, every corner rounded by 4px (less where a step is narrower); list items, set
+  // apart, get a shape each.
   var SVG = 'http://www.w3.org/2000/svg'
   var markSvg = document.createElementNS(SVG, 'svg')
   markSvg.setAttribute('class', 'edit-mark')
@@ -587,7 +588,7 @@
     markSvg.style.width = markSvg.style.height = '1px'
     markSvg.style.display = ''
   }
-  // The outline of a stack of lines: down the right edge, up the left one, square corners.
+  // The outline of a stack of lines: down the right edge, up the left one, then each corner rounded.
   function outline(stack) {
     var pts = []
     stack.forEach(function (l) { pts.push([l.right, l.top], [l.right, l.bottom]) })
@@ -596,7 +597,15 @@
       var a = pts[(i + pts.length - 1) % pts.length], b = pts[(i + 1) % pts.length]
       return !((a[0] === p[0] && p[0] === b[0]) || (a[1] === p[1] && p[1] === b[1]))
     })
-    return pts.map(function (p, i) { return (i ? 'L' : 'M') + p.join(' ') }).join(' ') + ' Z'
+    var n = pts.length
+    return pts.map(function (p, i) {
+      var a = pts[(i + n - 1) % n], b = pts[(i + 1) % n]
+      var da = Math.hypot(a[0] - p[0], a[1] - p[1]), db = Math.hypot(b[0] - p[0], b[1] - p[1])
+      var r = Math.min(4, da / 2, db / 2)
+      var p1 = [p[0] + (a[0] - p[0]) * r / da, p[1] + (a[1] - p[1]) * r / da]
+      var p2 = [p[0] + (b[0] - p[0]) * r / db, p[1] + (b[1] - p[1]) * r / db]
+      return (i ? 'L' : 'M') + p1.join(' ') + ' Q' + p.join(' ') + ' ' + p2.join(' ')
+    }).join(' ') + ' Z'
   }
   document.addEventListener('focusin', function (e) {
     if (blocks.indexOf(e.target) < 0) return
