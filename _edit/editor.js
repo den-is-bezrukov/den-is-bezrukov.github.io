@@ -908,6 +908,8 @@
   // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
   // other page; while it is typed into: Remove takes the project off this page.
+  // The first project has no ↑, the last no ↓.
+  var total = document.querySelectorAll('main article').length
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
     var tag = document.createElement('div'), id = document.createElement('span')
     tag.className = 'edit-case'
@@ -931,7 +933,7 @@
     tag.append(line, caseTools([['+', function () {
       gone()
       structural({ op: 'insertProject', article: n, before: article.id, id: freeAnchor() }, { anchor: n })
-    }], ['↑', function () { moveCase(-1) }], ['↓', function () { moveCase(1) }]]))
+    }]].concat(n > 0 ? [['↑', function () { moveCase(-1) }]] : [], n < total - 1 ? [['↓', function () { moveCase(1) }]] : [])))
     article.prepend(tag)
     function moveCase(dir) {
       var to = n + dir
