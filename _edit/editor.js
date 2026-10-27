@@ -488,9 +488,8 @@
   }
   // With words selected the toolbar holds only LINK, which links them as ⌘K does.
   var linkGroup = group([button('link', openLink)])
-  // list works as a switch: pressed on a list, it turns the list back into body; it stands in a group of its own.
-  var styleGroup = group(styles.filter(function (s) { return s[1] !== 'ul' }).map(styleButton))
-  var listGroup = group([styleButton(STYLES[6])])
+  // list, the last of the styles, works as a switch: pressed on a list, it turns the list back into body.
+  var styleGroup = group(styles.map(styleButton))
   function styleButton(s) {
     var b = button(s[0], function (el) {
       if (s[1] === 'ul' && el.tagName === 'UL') retype(el, 'p', '')
@@ -526,14 +525,13 @@
     if (!current) return
     var words = selected(), space = current.classList.contains('space')
     linkGroup.hidden = !words
-    styleGroup.hidden = listGroup.hidden = words || fixed(current)
+    styleGroup.hidden = words || fixed(current)
     wrapGroup.hidden = anchorGroup.hidden = words || space
     sizeGroup.hidden = !space
     moveGroups[0].hidden = moveGroups[1].hidden = words
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
     var now = styleOf(current)
     Array.prototype.forEach.call(styleGroup.children, function (b) { b.classList.toggle('on', b.dataset.style === now) })
-    listGroup.firstChild.classList.toggle('on', now === 'ul')
     wrapButton.classList.toggle('on', current.classList.contains('balance'))
   }
   // Selecting words or dropping the selection switches the toolbar between LINK and the rest.
