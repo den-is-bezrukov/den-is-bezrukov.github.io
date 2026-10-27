@@ -8,6 +8,8 @@
   var source = window.EDIT_SOURCE
   if (blocks.length !== source.length) return alert('Не удалось сопоставить текст с файлом, режим правки выключен.')
 
+  // A space's class on the spacing scale and its height in pixels, as the editor names it.
+  var SPACES = [['100', '16'], ['150', '24'], ['200', '32'], ['300', '48'], ['400', '64'], ['500', '80'], ['600', '96']]
   var style = document.createElement('style')
   style.textContent =
     // The editor's own lettering is Geist Mono, kept in _edit with its licence, so the site never loads it.
@@ -20,16 +22,8 @@
     '.edit-status { position: fixed; right: 16px; bottom: 16px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; color: var(--muted); opacity: 0; transition: opacity .3s; pointer-events: none; }' +
     '.edit-status.on { opacity: 1; }' +
     // The floating panels are white, a step lighter than the page's #fafafa, all lettering in them 14px.
-    '.edit-link, .edit-tools, .edit-anchors { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 4px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
+    '.edit-link, .edit-tools { z-index: 1; box-sizing: border-box; padding: 8px; border: 0; border-radius: 4px; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; font-feature-settings: "lnum", "pnum"; color: var(--text); background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08); outline: none; }' +
     '.edit-link { position: fixed; width: 320px; max-width: calc(100vw - 32px); }' +
-    // The project anchors under the anchor field: one per line, the anchor in the text colour where it holds what is typed,
-    // the project's title after it in grey, × at the end.
-    '.edit-anchors { position: fixed; display: flex; flex-direction: column; width: 320px; max-width: calc(100vw - 32px); max-height: 50vh; overflow: auto; padding: 8px 0; color: var(--muted); }' +
-    '.edit-anchors[hidden] { display: none; }' +
-    '.edit-anchors div { display: flex; }' +
-    '.edit-anchors button { all: unset; box-sizing: border-box; padding: 4px 8px; cursor: pointer; }' +
-    '.edit-anchors button:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
-    '.edit-anchors button:hover, .edit-anchors .on { color: var(--text); }' +
     // Every button is 32px tall with 4px either side of its label, so labels in a group are 8px apart; each group gets 4px more
     // at its ends, 8px from the toolbar's edge or the 0.5px line between groups, and is 32px wide at least; the buttons touch,
     // so the pointer goes straight from one to the next. Labels are grey capitals, the current style black at 600; in the
@@ -49,6 +43,14 @@
     // Every space is marked at the column's right edge by a line across its middle, as long as the space is tall.
     'main .space { position: relative; cursor: pointer; }' +
     'main .space::after { content: ""; position: absolute; top: 0; right: 0; height: 100%; aspect-ratio: 1; background: linear-gradient(transparent calc(50% - 0.5px), rgba(0, 0, 0, 0.1) 0 calc(50% + 0.5px), transparent 0); }' +
+    // Under the pointer, or picked, the line gives way to the space's height in pixels.
+    'main .space:hover::after, main .space:focus::after { background: none; display: flex; align-items: center; justify-content: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; letter-spacing: -0.05em; color: var(--text); }' +
+    SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
+    // A project's anchor in the gap above it.
+    'main article { position: relative; }' +
+    '.edit-case { position: absolute; right: 0; bottom: 100%; display: flex; align-items: center; font: 14px/1.15 "Geist Mono", ui-monospace, monospace; letter-spacing: -0.05em; text-transform: uppercase; color: var(--muted); }' +
+    '.edit-case span { min-width: 1ch; outline: none; cursor: text; }' +
+    '.edit-case span:focus { color: var(--text); }' +
     '.nb { background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 2px; }'
   document.head.appendChild(style)
   var status = document.createElement('div')
@@ -411,7 +413,6 @@
   function closeLink(apply) {
     var l = asking
     if (!l) return
-    if (l.kind === 'anchor') return closeAnchor(apply)
     asking = null
     linkField.hidden = true
     l.block.focus()
@@ -467,8 +468,6 @@
   // the block as it grows; plain text in groups, the current style in the text colour.
   var current = null
   var STYLES = [['h1', 'h1', ''], ['h2', 'h2', ''], ['h3', 'h3', ''], ['lead', 'p', 'lead'], ['body', 'p', ''], ['meta', 'p', 'meta'], ['list', 'ul', '']]
-  // A space's class on the spacing scale and its height in pixels, as its toolbar names it.
-  var SPACES = [['100', '16'], ['150', '24'], ['200', '32'], ['300', '48'], ['400', '64'], ['500', '80'], ['600', '96']]
   var KEYS = { Digit1: 'h1', Digit2: 'h2', Digit3: 'h3', Digit0: 'p', Digit8: 'p.meta' }
   function styleOf(el) {
     var cls = ['meta', 'lead'].filter(function (c) { return el.classList.contains(c) })[0]
@@ -534,8 +533,6 @@
     b.dataset.size = s[0]
     return b
   }))
-  // # opens the anchors: the block's own one to put on or change, and every anchor on the page.
-  var anchorGroup = group([button('#', askAnchor)])
   var moveGroups = [group([button('↑', function (el) { move(el, -1) })]), group([button('↓', function (el) { move(el, 1) })])]
 
   function selected() {
@@ -547,7 +544,7 @@
     var words = selected(), space = current.classList.contains('space')
     linkGroup.hidden = !words
     styleGroup.hidden = words || fixed(current)
-    wrapGroup.hidden = anchorGroup.hidden = words || space
+    wrapGroup.hidden = words || space
     sizeGroup.hidden = !space
     moveGroups[0].hidden = moveGroups[1].hidden = words || space
     Array.prototype.forEach.call(sizeGroup.children, function (b) { b.classList.toggle('on', current.classList.contains('space-' + b.dataset.size)) })
@@ -777,100 +774,42 @@
     hideControls()
     el.remove()
   }
-  // # opens the anchor field over the block, holding its own anchor: Enter puts the typed one on the block (an empty field
-  // takes it off). The resume links to projects by their anchors, so those stay on the articles.
-  function askAnchor(el) {
-    asking = { kind: 'anchor', block: el }
-    var rect = el.getBoundingClientRect()
-    hideControls()
-    linkField.value = el.id || ''
-    linkField.placeholder = 'якорь'
-    linkField.hidden = false
-    linkField.style.left = rect.left - 4 + 'px'
-    linkField.style.top = rect.top - 8 - linkField.getBoundingClientRect().height + 'px'
-    linkField.focus()
-    linkField.select()
-    listAnchors()
-  }
-
-  // Every anchor on the page, under the field: a project's or a block's, with its text in grey. A press on one goes there
-  // (a project with no blocks left gets the template back, so it can be typed into again). × takes the anchor off; a
-  // project's line in the project list goes with it, its text stays, and only a project with no blocks left goes too.
-  var anchors = document.createElement('div')
-  anchors.className = 'edit-anchors'
-  anchors.hidden = true
-  document.body.appendChild(anchors)
-  // Pressing in the list leaves the field open and focused.
-  anchors.addEventListener('pointerdown', function (e) { e.preventDefault() })
-  anchors.addEventListener('mousedown', function (e) { e.preventDefault() })
-  function listAnchors() {
-    var typed = linkField.value.trim()
-    anchors.textContent = ''
-    Array.prototype.forEach.call(document.querySelectorAll('main [id]'), function (target) {
-      var id = target.id, row = document.createElement('div')
-      var title = target.tagName === 'ARTICLE' ? target.querySelector('h1, h2') : target
-      var name = document.createElement('button'), off = document.createElement('button')
-      name.textContent = '#' + id
-      if (title) {
-        var grey = document.createElement('span')
-        grey.style.color = 'var(--muted)'
-        grey.textContent = '  ' + title.textContent.trim()
-        name.appendChild(grey)
-      }
-      name.classList.toggle('on', !!typed && id.indexOf(typed) >= 0)
-      off.textContent = '×'
-      name.addEventListener('click', function () { goToAnchor(target) })
-      off.addEventListener('click', function () { removeAnchor(target) })
-      row.appendChild(name)
-      row.appendChild(off)
-      anchors.appendChild(row)
+  // A project's anchor (the resume links to projects by it) stands in the gap above the project, at the column's right
+  // edge, in grey capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, and the links
+  // to it on this page and the other one follow; Escape brings the old one back; an empty one takes it off, along with
+  // the project's line in the project list.
+  var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
+    var tag = document.createElement('div'), id = document.createElement('span')
+    tag.className = 'edit-case'
+    id.contentEditable = 'plaintext-only'
+    id.spellcheck = false
+    id.textContent = article.id
+    tag.append('#', id)
+    article.prepend(tag)
+    // The anchor's typing is not the page's text: it neither saves the blocks nor holds the page open.
+    id.addEventListener('input', function (e) { e.stopPropagation() })
+    id.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); id.blur() }
+      if (e.key === 'Escape') { e.preventDefault(); id.textContent = article.id; id.blur() }
     })
-    var field = linkField.getBoundingClientRect()
-    anchors.hidden = !anchors.children.length
-    anchors.style.left = field.left + 'px'
-    anchors.style.top = field.bottom + 8 + 'px'
+    id.addEventListener('blur', function () {
+      var typed = id.textContent.trim().replace(/^#/, '').toLowerCase()
+      if (typed === article.id) return (id.textContent = article.id)
+      if (typed && (!/^[a-z0-9-]+$/.test(typed) || document.getElementById(typed))) {
+        id.textContent = article.id
+        return show('Такой якорь не подойдёт')
+      }
+      if (!typed) return structural({ op: 'removeAnchor', id: article.id }, null)
+      structural({ op: 'renameAnchor', article: n, before: article.id, id: typed }, null)
+    })
+    return { article: article, tag: tag }
+  })
+  // Each anchor is as tall as the gap above its project, its text in the middle.
+  function placeCases() {
+    cases.forEach(function (c) { c.tag.style.height = getComputedStyle(c.article).marginTop })
   }
-  linkField.addEventListener('input', function () { if (asking && asking.kind === 'anchor') listAnchors() })
-  function goToProject(id) {
-    var first = document.querySelector('#' + id + ' h1, #' + id + ' h2, #' + id + ' h3, #' + id + ' p, #' + id + ' ul')
-    closeAnchor(false)
-    if (!first) return structural({ op: 'fillProject', id: id }, { selector: '#' + id + ' h2', select: true })
-    first.scrollIntoView({ block: 'center' })
-    first.focus()
-    placeCaret(first, null)
-  }
-  function goToAnchor(target) {
-    if (target.tagName === 'ARTICLE') return goToProject(target.id)
-    closeAnchor(false)
-    target.scrollIntoView({ block: 'center' })
-    target.focus()
-    if (target.isContentEditable) placeCaret(target, null)
-  }
-  function removeAnchor(target) {
-    var at = asking && blocks.indexOf(asking.block)
-    closeAnchor(false)
-    if (target.tagName === 'ARTICLE') structural({ op: 'removeAnchor', id: target.id }, { index: at })
-    else setAnchor(target, '')
-  }
-  function setAnchor(el, id) {
-    var i = blocks.indexOf(el)
-    save()
-    send([{ op: 'anchor', index: i, before: source[i], id: id }])
-    if (id) el.id = id
-    else el.removeAttribute('id')
-  }
-  function closeAnchor(apply) {
-    var l = asking
-    if (!l) return
-    var id = linkField.value.trim(), other = id && document.getElementById(id)
-    if (apply && id && (!/^[a-z0-9-]+$/.test(id) || (other && other !== l.block))) return show('Такой якорь не подойдёт')
-    asking = null
-    linkField.hidden = true
-    anchors.hidden = true
-    linkField.placeholder = 'https://'
-    l.block.focus()
-    if (apply && id !== (l.block.id || '')) setAnchor(l.block, id)
-  }
+  placeCases()
+  addEventListener('resize', placeCases)
 
   // Bigger changes go to the server and the page comes back from the file, at the same place.
   function reloadTo(focus) {

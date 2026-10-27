@@ -122,6 +122,16 @@ def entry(row, id):
     return re.search(r'<span><a href="[^"]*#%s">.*?</a></span>' % re.escape(id), row, re.S)
 
 
+def relink(source, prefix, old, new):
+    """Links to an anchor of a page, written as prefix + #old, pointed at #new."""
+    return source.replace('href="%s#%s"' % (prefix, old), 'href="%s#%s"' % (prefix, new))
+
+
+def pages():
+    """The site's pages, as paths from ROOT: the home page and the cases."""
+    return ['index.html', os.path.join('cases', 'index.html')]
+
+
 def apply(source, edit, spans, articles):
     op = edit.get('op', 'edit')
     if op == 'addProject':
@@ -166,6 +176,18 @@ def apply(source, edit, spans, articles):
                 s2 += len('<wbr>')
             row = row[:s1] + row[s2:]
         return source[:start] + row + source[end:]
+    if op == 'renameAnchor':
+        # A project gets a new anchor (or its first one); the links to it on this page follow.
+        old, id = edit.get('before') or '', edit['id']
+        _, a1, _ = articles[edit['article']]
+        if (articles[edit['article']][0] or '') != old:
+            raise Refused('changed')
+        if not re.fullmatch(r'[a-z0-9-]+', id) or 'id="%s"' % id in source:
+            raise Refused('bad anchor')
+        tag_end = source.index('>', a1)
+        start_tag = re.sub(r'\sid="[^"]*"', '', source[a1:tag_end]) + ' id="%s"' % id
+        source = source[:a1] + start_tag + source[tag_end:]
+        return relink(source, '', old, id) if old else source
     if op == 'fillProject':
         # A project with no blocks left gets the template back under its anchor.
         id = edit['id']
@@ -207,15 +229,6 @@ def apply(source, edit, spans, articles):
         source = source[:close] + ''.join('\n' + indent + html for html in edit['blocks']) + source[close:]
     elif op == 'remove':
         source = source[:cut] + source[close:]
-    elif op == 'anchor':
-        # The block's own anchor: put on, changed, or taken off with an empty id.
-        id = edit.get('id') or ''
-        start_tag = re.sub(r'\sid="[^"]*"', '', source[tag:start])
-        if id:
-            if not re.fullmatch(r'[a-z0-9-]+', id) or re.search(r'\sid="%s"' % re.escape(id), source[:tag] + source[start:]):
-                raise Refused('bad anchor')
-            start_tag = start_tag[:1 + len(name)] + ' id="%s"' % id + start_tag[1 + len(name):]
-        source = source[:tag] + start_tag + source[start:]
     elif op == 'space':
         size = str(edit.get('size'))
         if name != 'div' or size not in SPACES:
@@ -270,6 +283,24 @@ def write(path, source):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(source)
     written[path] = source
+
+
+def relink_others(path, old, new):
+    """Points the other pages' links to path#old at path#new, each write kept in history like the editor's own."""
+    for page in pages():
+        other = os.path.join(ROOT, page)
+        if other == path:
+            continue
+        prefix = os.path.relpath(os.path.dirname(path), os.path.dirname(other)).replace(os.sep, '/')
+        prefix = '' if prefix == '.' else prefix + '/'
+        with open(other, encoding='utf-8') as f:
+            source = f.read()
+        result = relink(source, prefix, old, new)
+        if result != source:
+            snapshot(other, source)
+            undone.setdefault(other, []).append(source)
+            redone[other] = []
+            write(other, result)
 
 
 def page_file(url):
@@ -344,6 +375,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     undone.setdefault(path, []).append(source)
                     redone[path] = []
                     write(path, result)
+                # A project's new anchor: the links to it from the other page follow too.
+                for edit in edits:
+                    if edit.get('op') == 'renameAnchor' and edit.get('before'):
+                        relink_others(path, edit['before'], edit['id'])
                 return self.send_body('{"ok": true}', 'application/json')
             # Undo and redo only step through the editor's own writes; a file changed from outside stops them.
             back, forth = (undone, redone) if action == '/undo' else (redone, undone)
