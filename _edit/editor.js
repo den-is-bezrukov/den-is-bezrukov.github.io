@@ -114,6 +114,13 @@
       .replace(/(<br>)+$/, '')
       // Cutting a block or an item inside bold words or a link leaves an empty copy of them behind.
       .replace(/<(strong|b|em|i|a)(\s[^>]*)?><\/\1>/g, '')
+      // In a row of links: the stand-in that holds the caret in a new item goes, an item left empty goes, and every two
+      // items get their break point back.
+      .replace(/\u200b/g, '')
+      .replace(/(<wbr>)?<span><\/span>(<wbr>)?/g, '')
+      .replace(/<\/span>(<wbr>)?<span>/g, '</span><wbr><span>')
+      // Two pieces of one link side by side (an item joined back after a cut) become one link again.
+      .replace(/(<a href="([^"]*)">)((?:(?!<\/a>).)*)<\/a><a href="\2">/g, '$1$3')
   }
 
   // The indentation trimmed on load goes back around the text, so the file keeps its layout.
@@ -1108,7 +1115,8 @@
     }
     // A space comes and goes only with its paragraph; Backspace and Delete leave it be.
     if (block && block.classList.contains('space') && (e.key === 'Backspace' || e.key === 'Delete')) return e.preventDefault()
-    if (el && e.key === 'Backspace') {
+    if (el && e.key === 'Backspace' && rowItem(el) && joinItems(el)) e.preventDefault()
+    if (el && e.key === 'Backspace' && !e.defaultPrevented) {
       var li = el.tagName === 'UL' && itemAt(el)
       if (li ? atStart(li) : atStart(el)) {
         e.preventDefault()
@@ -1146,6 +1154,71 @@
       save()
     }
   })
+
+  // A row of links is typed like text: a · typed in it cuts the item there into two (the dot itself is drawn by the
+  // stylesheet, between items, never at a line's start), and Backspace right after a dot joins the two items again.
+  function rowItem(el) {
+    var sel = getSelection()
+    if (!el.classList.contains('list') || !sel.rangeCount) return null
+    var node = sel.anchorNode, item = node.nodeType === 1 ? node : node.parentNode
+    while (item && item !== el && !(item.parentNode && item.parentNode.classList && item.parentNode.classList.contains('row'))) item = item.parentNode
+    return item && item !== el && item.tagName === 'SPAN' ? item : null
+  }
+  document.addEventListener('beforeinput', function (e) {
+    var el = e.target
+    if (blocks.indexOf(el) < 0 || e.inputType !== 'insertText' || !e.data) return
+    var item = rowItem(el)
+    if (!item) return
+    // A space typed at an item's start (after a dot) is not wanted: the row spaces its items itself.
+    if (e.data === ' ' && atItemStart(item)) return e.preventDefault()
+    if (e.data.indexOf('·') < 0) return
+    e.preventDefault()
+    var range = getSelection().getRangeAt(0)
+    range.deleteContents()
+    var tail = document.createRange()
+    tail.setStart(range.startContainer, range.startOffset)
+    tail.setEnd(item, item.childNodes.length)
+    var next = document.createElement('span')
+    next.appendChild(tail.extractContents())
+    // A new empty item holds the caret on a zero-width stand-in, which never reaches the file.
+    var text = document.createTreeWalker(next, NodeFilter.SHOW_TEXT).nextNode()
+    if (!next.textContent.trim()) {
+      next.textContent = '\u200b'
+      text = next.firstChild
+    }
+    item.after(document.createElement('wbr'), next)
+    // No space around the dot: the item before ends at its last letter, the next starts at its first.
+    var last = item.lastChild
+    while (last && last.nodeType === 1) last = last.lastChild
+    if (last && last.nodeType === 3) last.nodeValue = last.nodeValue.replace(/\s+$/, '')
+    if (text.nodeValue !== '\u200b') text.nodeValue = text.nodeValue.replace(/^\s+/, '')
+    caret(text, text.nodeValue === '\u200b' ? 1 : 0)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  function atItemStart(item) {
+    var sel = getSelection(), before = document.createRange()
+    before.setStart(item, 0)
+    before.setEnd(sel.anchorNode, sel.anchorOffset)
+    return !before.toString().replace(/\u200b/g, '')
+  }
+  function joinItems(el) {
+    var item = rowItem(el), sel = getSelection()
+    if (!item || !sel.isCollapsed || !atItemStart(item)) return false
+    var prev = item.previousElementSibling
+    while (prev && prev.tagName === 'WBR') prev = prev.previousElementSibling
+    if (!prev || prev.tagName !== 'SPAN') return false
+    var wbr = item.previousElementSibling
+    if (wbr && wbr.tagName === 'WBR') wbr.remove()
+    var spot = document.createRange()
+    spot.selectNodeContents(prev)
+    spot.collapse(false)
+    while (item.firstChild) prev.appendChild(item.firstChild)
+    item.remove()
+    sel.removeAllRanges()
+    sel.addRange(spot)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    return true
+  }
 
   // A double click in a link picks a word of that link only: in a row of links the dots between them are drawn by the
   // stylesheet, so the browser sees the links' words run together.
