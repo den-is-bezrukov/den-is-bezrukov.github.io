@@ -62,7 +62,7 @@
     SPACES.map(function (s) { return 'main .space-' + s[0] + ':is(:hover, :focus)::after { content: "' + s[1] + '"; }' }).join('') +
     // A project's anchor in the gap above it.
     'main article { position: relative; }' +
-    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, Hide and Drop at the
+    // At the bottom of the gap, 16px above the project, at the column's left edge; while it is typed into, Hide and ╳ at the
     // right end of its line; under the pointer, + ↑ ↓ 8px above it.
     '.edit-case { position: absolute; left: 0; right: 0; bottom: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 8px; padding-bottom: 16px; font: 16px/1.5 "Geist Mono", ui-monospace, monospace; text-transform: uppercase; color: var(--muted); }' +
     '.edit-case-line { display: flex; justify-content: space-between; align-self: stretch; }' +
@@ -978,7 +978,7 @@
   // capitals, #UMO, and is typed into right there. Enter or leaving it puts the new one on, on both pages, and the links
   // follow; Escape, or leaving it empty, brings the old one back.
   // Over it, under the pointer: + puts a new project here (this one goes down), ↑ ↓ move this one, here and on the
-  // other page; while it is typed into: Hide (or Show) takes it off the site or puts it back, Drop takes it off this page.
+  // other page; while it is typed into: Hide (or Show) takes it off the site or puts it back, ╳ takes it off this page.
   // The first project has no ↑, the last no ↓.
   var total = document.querySelectorAll('main article').length
   var cases = Array.prototype.map.call(document.querySelectorAll('main article'), function (article, n) {
@@ -996,7 +996,7 @@
     acts.append(caseAct(article.hidden ? 'Show' : 'Hide', function () {
       gone()
       structural({ op: 'hideProject', article: n, before: article.id, hidden: !article.hidden }, null)
-    }), caseAct('Drop', function () {
+    }), caseAct('╳', function () {
       gone()
       structural({ op: 'removeProject', article: n, before: article.id }, null)
     }))
